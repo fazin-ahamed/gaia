@@ -6,6 +6,9 @@ const AuditLog = require('./AuditLog');
 const Workflow = require('./Workflow');
 const ApiData = require('./ApiData');
 
+// Store models globally
+let models = {};
+
 // Initialize database models
 async function initializeDatabase(sequelize) {
   // Define models
@@ -31,14 +34,18 @@ async function initializeDatabase(sequelize) {
     await sequelize.sync();
   }
 
-  return {
+  // Store models for global access
+  models = {
     Anomaly: anomalyModel,
     AuditLog: auditLogModel,
     Workflow: workflowModel,
     ApiData: apiDataModel,
   };
+
+  return models;
 }
 
 module.exports = {
   initializeDatabase,
+  models,
 };

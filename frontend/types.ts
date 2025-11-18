@@ -20,6 +20,8 @@ export interface Anomaly {
   aiReasoning: string;
   entities: string[];
   reviewerNotes?: string;
+  swarmConsensus?: number;
+  credibilityScore?: number;
 }
 
 export interface WorkflowStep {
@@ -38,4 +40,20 @@ export interface AuditLog {
     user: string; // 'System' or user name
     action: string;
     details: object;
+}
+
+export interface AgentContribution {
+  agentId: string;
+  agentType: string;
+  confidence: number;
+  output: string;
+  timestamp: string;
+}
+
+export interface MitigationStrategy {
+  id: string;
+  name: string;
+  description: string;
+  effectiveness: number;
+  status: 'recommended' | 'approved' | 'deployed' | 'completed';
 }

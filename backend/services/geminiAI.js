@@ -27,7 +27,7 @@ async function initializeGeminiAI() {
     }
 
     genAI = new GoogleGenerativeAI(apiKey);
-    model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
+    model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash-lite' });
 
     // Test the connection
     const testResult = await model.generateContent('Test connection');
@@ -93,9 +93,9 @@ Response format: JSON with keys: isAnomaly, severity, confidence, description, c
     let result;
 
     // Handle multimodal content
-    if (modalities && modalities.images && modalities.images.length > 0) {
-      // Use vision model for images
-      const visionModel = genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
+      if (modalities && modalities.images && modalities.images.length > 0) {
+        // Use vision model for images (gemini-1.5-flash supports multimodal)
+        const visionModel = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
 
       const imageParts = modalities.images.map(img => ({
         inlineData: {
@@ -137,7 +137,7 @@ Response format: JSON with keys: isAnomaly, severity, confidence, description, c
       ...analysis,
       rawResponse: text,
       timestamp: new Date(),
-      model: 'gemini-pro-vision'
+      model: 'gemini-1.5-flash'
     };
 
   } catch (error) {

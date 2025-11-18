@@ -68,9 +68,16 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
     tags: {
-      type: DataTypes.ARRAY(DataTypes.STRING),
+      type: DataTypes.TEXT,
       allowNull: true,
-      defaultValue: [],
+      defaultValue: JSON.stringify([]),
+      get() {
+        const rawValue = this.getDataValue('tags');
+        return rawValue ? JSON.parse(rawValue) : [];
+      },
+      set(val) {
+        this.setDataValue('tags', JSON.stringify(val));
+      },
     },
   }, {
     tableName: 'api_data',

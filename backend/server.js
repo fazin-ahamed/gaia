@@ -14,6 +14,10 @@ require('dotenv').config();
 const anomalyRoutes = require('./routes/anomalies');
 const apiRoutes = require('./routes/apis');
 const workflowRoutes = require('./routes/workflows');
+const realtimeRoutes = require('./routes/realtime');
+const uploadRoutes = require('./routes/upload');
+const opusRoutes = require('./routes/opus');
+const statsRoutes = require('./routes/stats');
 const { initializeDatabase } = require('./models');
 const { startDataIngestion } = require('./services/dataIngestion');
 const { initializeGeminiAI } = require('./services/geminiAI');
@@ -47,16 +51,22 @@ if (process.env.NODE_ENV !== 'production') {
   }));
 }
 
-// Database connection
-const sequelize = new Sequelize({
-  dialect: 'postgres',
-  host: process.env.DB_HOST || 'localhost',
-  port: process.env.DB_PORT || 5432,
-  database: process.env.DB_NAME || 'gaia_db',
-  username: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASSWORD || '',
+// Database connection - Support both PostgreSQL and SQLite
+const dbConfig = {
+  dialect: process.env.DB_DIALECT || 'postgres',
   logging: (msg) => logger.debug(msg),
-});
+};
+
+if (dbConfig.dialect === 'sqlite') {
+  dbConfig.storage = process.env.DB_STORAGE || './gaia.db';
+} else {
+  dbConfig.host = process.env.DB_HOST || 'localhost';
+  dbConfig.port = process.env.DB_PORT || 5432;
+  dbConfig.database = process.env.DB_NAME || 'gaia_db';
+  dbConfig.username = process.env.DB_USER || 'postgres';
+  dbConfig.password = process.env.DB_PASSWORD || '';
+}
+const sequelize = new Sequelize(dbConfig);
 
 // Initialize database and services
 async function initializeApp() {
@@ -66,7 +76,8 @@ async function initializeApp() {
     logger.info('Database connection has been established successfully.');
 
     // Initialize database models
-    await initializeDatabase(sequelize);
+    const models = await initializeDatabase(sequelize);
+    global.models = models; // Make models globally accessible
 
     // Initialize AI service
     await initializeGeminiAI();
@@ -96,6 +107,10 @@ async function initializeApp() {
 app.use('/api/anomalies', anomalyRoutes);
 app.use('/api/apis', apiRoutes);
 app.use('/api/workflows', workflowRoutes);
+app.use('/api/realtime', realtimeRoutes);
+app.use('/api/upload', uploadRoutes);
+app.use('/api/opus', opusRoutes);
+app.use('/api/stats', statsRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

@@ -1,5 +1,5 @@
 # GAIA Backend Dockerfile
-FROM node:18-alpine
+FROM node:20-alpine
 
 # Set working directory
 WORKDIR /app
@@ -20,8 +20,8 @@ RUN apk add --no-cache \
 # Copy package files
 COPY backend/package*.json ./
 
-# Install dependencies
-RUN npm ci --only=production
+# Install dependencies (use npm install to avoid lockfile mismatches and honor newer Node engine)
+RUN npm install --production --legacy-peer-deps --no-audit --no-fund
 
 # Copy application code
 COPY backend/ .

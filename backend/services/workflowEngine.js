@@ -1,4 +1,5 @@
-const { models } = require('../models');
+// Models will be available globally after initialization
+const getModels = () => global.models || {};
 const { analyzeAnomalyData, crossVerifyData } = require('./geminiAI');
 const { notifyAnomalyUpdate, notifyWorkflowUpdate } = require('./websocket');
 const winston = require('winston');
@@ -26,6 +27,12 @@ async function initializeWorkflowEngine() {
 
   // Load and validate existing workflows
   try {
+    const models = getModels();
+    if (!models.Workflow) {
+      logger.warn('Models not yet initialized, skipping workflow engine initialization');
+      return;
+    }
+    
     const workflows = await models.Workflow.findAll({
       where: { status: 'active' }
     });
@@ -44,6 +51,7 @@ async function initializeWorkflowEngine() {
 
 async function createDefaultWorkflow() {
   try {
+    const models = getModels();
     const defaultWorkflow = await models.Workflow.create({
       name: 'Default Anomaly Processing Workflow',
       description: 'Standard intake-decide-review-deliver workflow',
@@ -158,6 +166,7 @@ async function createDefaultWorkflow() {
 
 async function executeWorkflow(workflowId, anomalyId, parameters = {}) {
   try {
+    const models = getModels();
     const workflow = await models.Workflow.findByPk(workflowId);
     if (!workflow) {
       throw new Error(`Workflow ${workflowId} not found`);
@@ -284,6 +293,7 @@ async function executeIntakeNode(context, node) {
 
 async function executeAINode(context, node) {
   // AI Analysis node: Use Gemini AI for anomaly analysis
+  const models = getModels();
   const anomaly = context.anomaly;
 
   const analysis = await analyzeAnomalyData({
@@ -322,6 +332,7 @@ async function executeAINode(context, node) {
 
 async function executeVerificationNode(context, node) {
   // Cross-verification node: Verify anomaly across multiple sources
+  const models = getModels();
   const anomaly = context.anomaly;
 
   // Get related API data
@@ -373,6 +384,7 @@ async function executeDecisionNode(context, node) {
 
 async function executeHumanNode(context, node) {
   // Human review node: Wait for human input
+  const models = getModels();
   const anomaly = await models.Anomaly.findByPk(context.anomalyId);
 
   // Update anomaly status to require human review
@@ -392,6 +404,7 @@ async function executeHumanNode(context, node) {
 
 async function executeEscalationNode(context, node) {
   // Escalation node: Notify higher authorities
+  const models = getModels();
   const anomaly = context.anomaly;
 
   await anomaly.update({
@@ -417,6 +430,7 @@ async function executeEscalationNode(context, node) {
 
 async function executeApprovalNode(context, node) {
   // Approval node: Final approval and report generation
+  const models = getModels();
   const anomaly = context.anomaly;
 
   await anomaly.update({

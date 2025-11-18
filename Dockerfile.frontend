@@ -1,14 +1,16 @@
 # GAIA Frontend Dockerfile
-FROM node:18-alpine AS builder
+FROM node:20-alpine AS builder
 
 # Set working directory
 WORKDIR /app
 
 # Copy package files
+# Copy package files
 COPY frontend/package*.json ./
 
-# Install dependencies
-RUN npm ci
+# Install native build tools required by some packages, then install dependencies
+RUN apk add --no-cache python3 make g++ build-base && \
+    npm install --legacy-peer-deps --no-audit --no-fund
 
 # Copy application code
 COPY frontend/ .

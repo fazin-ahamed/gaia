@@ -1,18 +1,20 @@
 
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, BarChart2, Map, Settings, FileText, Info, HelpCircle, AlertTriangle, UploadCloud, Bot, UserCheck, Search, ListChecks } from 'lucide-react';
+import { Home, BarChart2, Map, Settings, FileText, Info, HelpCircle, AlertTriangle, UploadCloud, Bot, UserCheck, Search, ListChecks, Network, Bell, Shield } from 'lucide-react';
 
 const Sidebar: React.FC = () => {
     const navItems = [
-        { path: '/dashboard', icon: Home, label: 'Dashboard' },
-        { path: '/report', icon: UploadCloud, label: 'Report Anomaly' },
-        { path: '/analytics', icon: Map, label: 'Global Analytics' },
-        { path: '/review/ANOM-001', icon: UserCheck, label: 'Review Pending' },
+        { path: '/dashboard-enhanced', icon: Home, label: 'Command Dashboard' },
+        { path: '/upload', icon: UploadCloud, label: 'Upload Evidence' },
+        { path: '/operations', icon: Network, label: 'Operations Console' },
+        { path: '/alerts', icon: Bell, label: 'Alerts & Delivery' },
+        { path: '/analytics-enhanced', icon: Map, label: 'Global Analytics' },
+        { path: '/verification/anom-001', icon: Shield, label: 'Verification' },
+        { path: '/incident-enhanced/anom-001', icon: AlertTriangle, label: 'Incident Details' },
         { path: '/audit/ANOM-001', icon: FileText, label: 'Audit Viewer' },
-        { path: '/settings', icon: Settings, label: 'Admin Settings' },
-        { path: '/onboarding', icon: HelpCircle, label: 'Onboarding' },
-        { path: '/about', icon: Info, label: 'About GAIA' },
+        { path: '/settings', icon: Settings, label: 'Settings' },
+        { path: '/about', icon: Info, label: 'About GAIA 3.1' },
     ];
 
     const activeLinkClass = "bg-gaia-accent text-white";
