@@ -106,6 +106,12 @@ if (config.url) {
   sequelize = new Sequelize(config.url, {
     dialect: config.dialect,
     dialectOptions: config.dialectOptions,
+    pool: {
+      max: 5,
+      min: 0,
+      acquire: 30000,
+      idle: 10000
+    },
     logging: config.logging
   });
 } else {
@@ -117,6 +123,12 @@ if (config.url) {
       host: config.host,
       port: config.port,
       dialect: config.dialect,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
       logging: config.logging
     }
   );
