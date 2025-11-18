@@ -10,6 +10,7 @@
     "migrate": "node migrate-and-seed.js",
     "migrate:prod": "node setup-database.js",
     "migrate:simple": "node simple-migrate.js",
+    "cleanup": "node cleanup-and-migrate.js",
     "seed": "node seed-data.js"
   },
   "dependencies": {

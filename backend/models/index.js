@@ -28,10 +28,27 @@ async function initializeDatabase(sequelize) {
   anomalyModel.hasMany(apiDataModel, { foreignKey: 'anomalyId' });
 
   // Sync database
+  // In production, skip sync if tables already exist (use migration scripts instead)
   if (process.env.NODE_ENV === 'development') {
     await sequelize.sync({ alter: true });
   } else {
-    await sequelize.sync();
+    // Check if tables exist before syncing
+    try {
+      const [results] = await sequelize.query(
+        "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'anomalies';"
+      );
+      
+      if (results.length === 0) {
+        // Tables don't exist, create them
+        console.log('Tables not found, creating...');
+        await sequelize.sync();
+      } else {
+        console.log('Tables already exist, skipping sync');
+      }
+    } catch (error) {
+      console.log('Could not check tables, attempting sync...');
+      await sequelize.sync();
+    }
   }
 
   // Store models for global access
