@@ -1,0 +1,5 @@
+{
+  "name": "GAIA: Global Autonomous Intelligence for Anomaly-detection",
+  "description": "A fully autonomous, multimodal AI platform for global anomaly detection, analysis, and response orchestration. GAIA leverages Gemini for advanced analytics and Opus for workflow management, with an optional human-in-the-loop review process.",
+  "requestFramePermissions": []
+}

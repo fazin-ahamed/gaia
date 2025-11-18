@@ -1,0 +1,320 @@
+{
+  "id": "default-anomaly-workflow",
+  "name": "Default Anomaly Processing Workflow",
+  "description": "Standard intake-decide-review-deliver workflow for anomaly processing",
+  "version": "1.0",
+  "author": "GAIA System",
+  "created": "2025-11-18T07:18:15.000Z",
+  "updated": "2025-11-18T07:18:15.000Z",
+  "status": "active",
+  "type": "anomaly_processing",
+  "template": {
+    "schemaVersion": "1.0",
+    "engine": "opus"
+  },
+  "configuration": {
+    "autoStart": true,
+    "maxExecutionTime": 3600000,
+    "retryPolicy": {
+      "maxRetries": 3,
+      "backoffMultiplier": 2,
+      "initialDelay": 1000
+    },
+    "notificationSettings": {
+      "onStart": false,
+      "onComplete": true,
+      "onError": true,
+      "channels": ["system", "dashboard"]
+    }
+  },
+  "nodes": [
+    {
+      "id": "intake",
+      "type": "intake",
+      "label": "Data Intake & Validation",
+      "description": "Initial data ingestion and basic validation",
+      "position": { "x": 100, "y": 100 },
+      "config": {
+        "validateData": true,
+        "checkCompleteness": true,
+        "normalizeData": true,
+        "timeout": 30000
+      },
+      "inputs": ["anomaly_data"],
+      "outputs": ["validated_data"]
+    },
+    {
+      "id": "ai_pre_analysis",
+      "type": "ai",
+      "label": "AI Pre-Analysis",
+      "description": "Initial AI analysis for anomaly scoring",
+      "position": { "x": 300, "y": 100 },
+      "config": {
+        "model": "gemini-pro",
+        "task": "anomaly_detection",
+        "confidenceThreshold": 0.6,
+        " multimodalAnalysis": true,
+        "analysisDepth": "basic"
+      },
+      "inputs": ["validated_data"],
+      "outputs": ["ai_analysis", "confidence_score"]
+    },
+    {
+      "id": "cross_verification",
+      "type": "verification",
+      "label": "Cross-Source Verification",
+      "description": "Verify anomaly across multiple data sources",
+      "position": { "x": 500, "y": 100 },
+      "config": {
+        "minSources": 2,
+        "verificationMethods": ["correlation", "consistency", "temporal"],
+        "timeout": 60000
+      },
+      "inputs": ["ai_analysis", "source_data"],
+      "outputs": ["verification_result", "confidence_adjustment"]
+    },
+    {
+      "id": "severity_assessment",
+      "type": "assessment",
+      "label": "Severity & Impact Assessment",
+      "description": "Assess severity and potential impact",
+      "position": { "x": 700, "y": 100 },
+      "config": {
+        "factors": ["confidence", "location", "data_sources", "temporal_urgency"],
+        "severityLevels": ["low", "medium", "high", "critical"],
+        "impactRadius": "auto"
+      },
+      "inputs": ["verification_result", "ai_analysis"],
+      "outputs": ["severity_level", "impact_assessment"]
+    },
+    {
+      "id": "decision_router",
+      "type": "router",
+      "label": "Decision Router",
+      "description": "Route based on confidence and severity",
+      "position": { "x": 900, "y": 100 },
+      "config": {
+        "autoApproveThreshold": 0.85,
+        "humanReviewThreshold": 0.7,
+        "escalationThreshold": 0.9,
+        "autoRejectThreshold": 0.3
+      },
+      "inputs": ["severity_level", "confidence_score"],
+      "outputs": ["auto_approve", "human_review", "escalate", "auto_reject"]
+    },
+    {
+      "id": "human_review",
+      "type": "human",
+      "label": "Human Review",
+      "description": "Manual review by human operator",
+      "position": { "x": 1100, "y": 50 },
+      "config": {
+        "reviewerRoles": ["analyst", "supervisor"],
+        "timeout": 3600000,
+        "escalationTime": 7200000,
+        "requiredApprovals": 1
+      },
+      "inputs": ["anomaly_data", "ai_analysis", "verification_result"],
+      "outputs": ["approved", "rejected", "escalated", "comments"]
+    },
+    {
+      "id": "escalation",
+      "type": "escalation",
+      "label": "Escalation to Higher Authority",
+      "description": "Escalate to senior personnel or emergency response",
+      "position": { "x": 1100, "y": 150 },
+      "config": {
+        "escalationLevels": ["supervisor", "manager", "executive", "emergency"],
+        "notificationChannels": ["email", "sms", "dashboard", "alert_system"],
+        "priority": "high"
+      },
+      "inputs": ["anomaly_data", "severity_level"],
+      "outputs": ["escalated", "acknowledged"]
+    },
+    {
+      "id": "auto_rejection",
+      "type": "auto_action",
+      "label": "Auto-Rejection",
+      "description": "Automatically reject low-confidence anomalies",
+      "position": { "x": 1100, "y": 250 },
+      "config": {
+        "reason": "low_confidence",
+        "archive": true,
+        "notifyCreator": false
+      },
+      "inputs": ["anomaly_data"],
+      "outputs": ["rejected"]
+    },
+    {
+      "id": "final_approval",
+      "type": "approval",
+      "label": "Final Approval",
+      "description": "Final approval and processing",
+      "position": { "x": 1300, "y": 100 },
+      "config": {
+        "generateReport": true,
+        "updateAuditLog": true,
+        "createProvenanceRecord": true
+      },
+      "inputs": ["anomaly_data", "decision"],
+      "outputs": ["approved_anomaly"]
+    },
+    {
+      "id": "report_generation",
+      "type": "report",
+      "label": "Report Generation",
+      "description": "Generate comprehensive anomaly report",
+      "position": { "x": 1500, "y": 100 },
+      "config": {
+        "formats": ["json", "pdf"],
+        "includeProvenance": true,
+        "includeEvidence": true,
+        "compression": true
+      },
+      "inputs": ["approved_anomaly"],
+      "outputs": ["report"]
+    },
+    {
+      "id": "notification_delivery",
+      "type": "notification",
+      "label": "Notification & Delivery",
+      "description": "Deliver notifications and reports to stakeholders",
+      "position": { "x": 1700, "y": 100 },
+      "config": {
+        "channels": ["email", "dashboard", "api", "webhook"],
+        "stakeholders": ["analysts", "managers", "systems"],
+        "urgencyMapping": {
+          "low": ["dashboard"],
+          "medium": ["email", "dashboard"],
+          "high": ["email", "sms", "dashboard"],
+          "critical": ["email", "sms", "dashboard", "alert_system"]
+        }
+      },
+      "inputs": ["report", "severity_level"],
+      "outputs": ["delivered"]
+    },
+    {
+      "id": "archival",
+      "type": "archive",
+      "label": "Data Archival",
+      "description": "Archive processed data and metadata",
+      "position": { "x": 1900, "y": 100 },
+      "config": {
+        "retentionPeriod": "7_years",
+        "compression": true,
+        "encryption": true,
+        "backupEnabled": true
+      },
+      "inputs": ["approved_anomaly", "report", "audit_log"],
+      "outputs": ["archived"]
+    }
+  ],
+  "edges": [
+    {
+      "id": "intake_to_ai",
+      "source": "intake",
+      "target": "ai_pre_analysis",
+      "condition": "data_valid"
+    },
+    {
+      "id": "ai_to_verification",
+      "source": "ai_pre_analysis",
+      "target": "cross_verification",
+      "condition": "analysis_complete"
+    },
+    {
+      "id": "verification_to_assessment",
+      "source": "cross_verification",
+      "target": "severity_assessment",
+      "condition": "verification_complete"
+    },
+    {
+      "id": "assessment_to_router",
+      "source": "severity_assessment",
+      "target": "decision_router",
+      "condition": "assessment_complete"
+    },
+    {
+      "id": "router_to_human_review",
+      "source": "decision_router",
+      "target": "human_review",
+      "condition": "human_review"
+    },
+    {
+      "id": "router_to_escalation",
+      "source": "decision_router",
+      "target": "escalation",
+      "condition": "escalate"
+    },
+    {
+      "id": "router_to_auto_reject",
+      "source": "decision_router",
+      "target": "auto_rejection",
+      "condition": "auto_reject"
+    },
+    {
+      "id": "router_to_approval",
+      "source": "decision_router",
+      "target": "final_approval",
+      "condition": "auto_approve"
+    },
+    {
+      "id": "human_to_approval",
+      "source": "human_review",
+      "target": "final_approval",
+      "condition": "approved"
+    },
+    {
+      "id": "human_to_escalation",
+      "source": "human_review",
+      "target": "escalation",
+      "condition": "escalated"
+    },
+    {
+      "id": "escalation_to_approval",
+      "source": "escalation",
+      "target": "final_approval",
+      "condition": "acknowledged"
+    },
+    {
+      "id": "approval_to_report",
+      "source": "final_approval",
+      "target": "report_generation",
+      "condition": "approved"
+    },
+    {
+      "id": "report_to_notification",
+      "source": "report_generation",
+      "target": "notification_delivery",
+      "condition": "report_generated"
+    },
+    {
+      "id": "notification_to_archival",
+      "source": "notification_delivery",
+      "target": "archival",
+      "condition": "delivered"
+    }
+  ],
+  "variables": {
+    "autoModeEnabled": false,
+    "confidenceThreshold": 0.7,
+    "severityThreshold": "medium",
+    "escalationEnabled": true,
+    "notificationEnabled": true,
+    "reportGenerationEnabled": true,
+    "archivalEnabled": true
+  },
+  "permissions": {
+    "view": ["analyst", "supervisor", "admin"],
+    "edit": ["supervisor", "admin"],
+    "execute": ["system", "analyst", "supervisor", "admin"],
+    "delete": ["admin"]
+  },
+  "metadata": {
+    "category": "anomaly_processing",
+    "tags": ["default", "standard", "automated"],
+    "estimatedDuration": 300000,
+    "successRate": 0.95,
+    "usageCount": 0
+  }
+}

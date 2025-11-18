@@ -1,0 +1,141 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: gaia-postgres
+    environment:
+      POSTGRES_DB: gaia_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: gaia_password_2025
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
+    ports:
+      - "5432:5432"
+    networks:
+      - gaia-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d gaia_db"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    container_name: gaia-redis
+    ports:
+      - "6379:6379"
+    networks:
+      - gaia-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # GAIA Backend API
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: gaia-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: gaia_db
+      DB_USER: postgres
+      DB_PASSWORD: gaia_password_2025
+      REDIS_URL: redis://redis:6379
+      AUTONOMOUS_MODE: "true"
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+      OPENWEATHER_API_KEY: ${OPENWEATHER_API_KEY}
+      WEATHERBIT_API_KEY: ${WEATHERBIT_API_KEY}
+      NASA_API_KEY: ${NASA_API_KEY}
+      NEWSAPI_KEY: ${NEWSAPI_KEY}
+      EONET_API_KEY: ${EONET_API_KEY}
+      TOMTOM_API_KEY: ${TOMTOM_API_KEY}
+      AIRVISUAL_API_KEY: ${AIRVISUAL_API_KEY}
+      JWT_SECRET: gaia_jwt_secret_2025_production
+    ports:
+      - "3001:3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gaia-network
+    volumes:
+      - backend_logs:/app/logs
+      - backend_uploads:/app/uploads
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # GAIA Frontend
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    container_name: gaia-frontend
+    environment:
+      REACT_APP_API_URL: http://backend:3001/api
+      REACT_APP_WS_URL: ws://backend:3001
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - gaia-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    restart: unless-stopped
+
+  # Workflow Executor Service
+  workflow-executor:
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+    container_name: gaia-workflow-executor
+    environment:
+      NODE_ENV: production
+      EXECUTOR_MODE: workflow
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: gaia_db
+      DB_USER: postgres
+      DB_PASSWORD: gaia_password_2025
+      REDIS_URL: redis://redis:6379
+      GEMINI_API_KEY: ${GEMINI_API_KEY}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - gaia-network
+    volumes:
+      - workflow_logs:/app/logs
+    command: ["node", "workflow-executor.js"]
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+  backend_logs:
+  backend_uploads:
+  workflow_logs:
+
+networks:
+  gaia-network:
+    driver: bridge

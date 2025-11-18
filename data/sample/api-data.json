@@ -1,0 +1,125 @@
+[
+  {
+    "anomalyId": "sample-anomaly-001",
+    "apiName": "NOAA Satellite",
+    "endpoint": "imagery",
+    "rawData": {
+      "satellite": "GOES-16",
+      "band": "infrared",
+      "timestamp": "2025-11-18T06:00:00Z",
+      "imageUrl": "https://example.com/goes16-ir-001.jpg",
+      "metadata": {
+        "cloudTopTemp": -85,
+        "stormIntensity": "major",
+        "movement": "NW at 15 mph"
+      }
+    },
+    "processedData": {
+      "stormClassification": "Category 4 Hurricane",
+      "rapidIntensification": true,
+      "anomalyScore": 0.95
+    },
+    "dataType": "satellite",
+    "location": {
+      "lat": 25.7617,
+      "lng": -80.1918
+    },
+    "timestamp": "2025-11-18T06:00:00Z",
+    "confidence": 0.92,
+    "status": "processed"
+  },
+  {
+    "anomalyId": "sample-anomaly-002",
+    "apiName": "USGS Earthquake API",
+    "endpoint": "query",
+    "rawData": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "properties": {
+            "mag": 4.8,
+            "place": "10km SW of Parkfield, CA",
+            "time": 1731912000000,
+            "status": "reviewed"
+          },
+          "geometry": {
+            "type": "Point",
+            "coordinates": [
+              -120.432,
+              35.899,
+              8.1
+            ]
+          }
+        }
+      ]
+    },
+    "processedData": {
+      "earthquakeCount": 15,
+      "maxMagnitude": 4.8,
+      "swarmPattern": true,
+      "timeWindow": "2 hours",
+      "concentration": "5km radius"
+    },
+    "dataType": "disaster",
+    "location": {
+      "lat": 35.7796,
+      "lng": -119.4179
+    },
+    "timestamp": "2025-11-18T04:00:00Z",
+    "confidence": 0.89,
+    "status": "processed"
+  },
+  {
+    "anomalyId": "sample-anomaly-003",
+    "apiName": "AirVisual API",
+    "endpoint": "city",
+    "rawData": {
+      "status": "success",
+      "data": {
+        "city": "Hong Kong",
+        "state": "Hong Kong",
+        "country": "Hong Kong",
+        "location": {
+          "type": "Point",
+          "coordinates": [
+            114.1694,
+            22.3193
+          ]
+        },
+        "current": {
+          "pollution": {
+            "ts": "2025-11-18T02:00:00.000Z",
+            "aqius": 450,
+            "mainus": "p2",
+            "aqicn": 180,
+            "maincn": "p2"
+          },
+          "weather": {
+            "ts": "2025-11-18T02:00:00.000Z",
+            "tp": 22,
+            "pr": 1015,
+            "hu": 78,
+            "ws": 2.1,
+            "wd": 180,
+            "ic": "10d"
+          }
+        }
+      }
+    },
+    "processedData": {
+      "pm25Level": 450,
+      "airQualityIndex": 180,
+      "pollutant": "PM2.5",
+      "status": "hazardous",
+      "baselineComparison": "5x normal"
+    },
+    "dataType": "environmental",
+    "location": {
+      "lat": 22.3193,
+      "lng": 114.1694
+    },
+    "timestamp": "2025-11-18T02:00:00Z",
+    "confidence": 0.87,
+    "status": "processed"
+  }
+]

@@ -1,0 +1,323 @@
+{
+  "id": "emergency-response-workflow",
+  "name": "Emergency Response Workflow",
+  "description": "Rapid response workflow for high-severity anomalies requiring immediate action",
+  "version": "1.0",
+  "author": "GAIA System",
+  "created": "2025-11-18T07:18:40.000Z",
+  "updated": "2025-11-18T07:18:40.000Z",
+  "status": "active",
+  "type": "emergency_response",
+  "template": {
+    "schemaVersion": "1.0",
+    "engine": "opus"
+  },
+  "configuration": {
+    "autoStart": true,
+    "maxExecutionTime": 1800000,
+    "priority": "critical",
+    "retryPolicy": {
+      "maxRetries": 5,
+      "backoffMultiplier": 1.5,
+      "initialDelay": 500
+    },
+    "notificationSettings": {
+      "onStart": true,
+      "onComplete": true,
+      "onError": true,
+      "channels": ["alert_system", "sms", "email", "dashboard"]
+    }
+  },
+  "nodes": [
+    {
+      "id": "emergency_intake",
+      "type": "emergency_intake",
+      "label": "Emergency Data Intake",
+      "description": "Rapid intake of emergency anomaly data",
+      "position": { "x": 100, "y": 100 },
+      "config": {
+        "priorityProcessing": true,
+        "bypassValidation": false,
+        "alertOnIntake": true,
+        "timeout": 10000
+      },
+      "inputs": ["emergency_data"],
+      "outputs": ["prioritized_data"]
+    },
+    {
+      "id": "immediate_ai_triage",
+      "type": "ai",
+      "label": "Immediate AI Triage",
+      "description": "Rapid AI assessment for emergency classification",
+      "position": { "x": 300, "y": 100 },
+      "config": {
+        "model": "gemini-pro-vision",
+        "task": "emergency_triage",
+        "responseTimeTarget": 5000,
+        "confidenceThreshold": 0.75,
+        "multimodalAnalysis": true,
+        "emergencyKeywords": ["disaster", "crisis", "emergency", "critical", "immediate"]
+      },
+      "inputs": ["prioritized_data"],
+      "outputs": ["triage_result", "emergency_level"]
+    },
+    {
+      "id": "parallel_verification",
+      "type": "parallel_verification",
+      "label": "Parallel Source Verification",
+      "description": "Simultaneous verification across all available sources",
+      "position": { "x": 500, "y": 100 },
+      "config": {
+        "maxParallelRequests": 10,
+        "verificationTimeout": 15000,
+        "minConfirmations": 2,
+        "emergencyMode": true
+      },
+      "inputs": ["triage_result"],
+      "outputs": ["verification_results", "confirmation_level"]
+    },
+    {
+      "id": "impact_assessment",
+      "type": "impact",
+      "label": "Emergency Impact Assessment",
+      "description": "Assess immediate and potential impact",
+      "position": { "x": 700, "y": 100 },
+      "config": {
+        "assessmentFactors": ["severity", "location", "population_density", "infrastructure", "response_time"],
+        "impactRadius": "dynamic",
+        "escalationTriggers": ["human_casualties", "infrastructure_damage", "environmental_threat"]
+      },
+      "inputs": ["verification_results", "emergency_level"],
+      "outputs": ["impact_assessment", "response_requirements"]
+    },
+    {
+      "id": "emergency_decision",
+      "type": "emergency_router",
+      "label": "Emergency Decision Router",
+      "description": "Route to appropriate emergency response actions",
+      "position": { "x": 900, "y": 100 },
+      "config": {
+        "autoResponseThreshold": 0.9,
+        "coordinationThreshold": 0.8,
+        "commandThreshold": 0.95,
+        "responseTimeTarget": 300000
+      },
+      "inputs": ["impact_assessment", "confirmation_level"],
+      "outputs": ["auto_response", "coordination_call", "command_activation", "escalate_further"]
+    },
+    {
+      "id": "auto_response_activation",
+      "type": "auto_response",
+      "label": "Automated Response Activation",
+      "description": "Trigger automated emergency response protocols",
+      "position": { "x": 1100, "y": 50 },
+      "config": {
+        "responseProtocols": ["alert_system", "notification_chain", "resource_allocation"],
+        "coordinationSystems": ["emergency_services", "government_agencies", "international_aid"],
+        "timeout": 60000
+      },
+      "inputs": ["response_requirements"],
+      "outputs": ["response_activated", "acknowledgments"]
+    },
+    {
+      "id": "coordination_call",
+      "type": "coordination",
+      "label": "Emergency Coordination Call",
+      "description": "Initiate multi-agency coordination",
+      "position": { "x": 1100, "y": 150 },
+      "config": {
+        "participants": ["emergency_services", "local_government", "federal_agencies", "international_orgs"],
+        "callPriority": "critical",
+        "recordingRequired": true,
+        "decisionLogRequired": true
+      },
+      "inputs": ["impact_assessment"],
+      "outputs": ["coordination_established", "action_plan"]
+    },
+    {
+      "id": "command_center_activation",
+      "type": "command",
+      "label": "Command Center Activation",
+      "description": "Activate full emergency command center",
+      "position": { "x": 1100, "y": 250 },
+      "config": {
+        "commandLevel": "national",
+        "resourceMobilization": "full",
+        "communicationChannels": ["satellite", "emergency_broadcast", "secure_lines"],
+        "monitoringSystems": "all"
+      },
+      "inputs": ["impact_assessment"],
+      "outputs": ["command_activated", "resource_status"]
+    },
+    {
+      "id": "maximum_escalation",
+      "type": "maximum_escalation",
+      "label": "Maximum Escalation Protocol",
+      "description": "Execute maximum escalation for catastrophic events",
+      "position": { "x": 1300, "y": 100 },
+      "config": {
+        "escalationLevel": "international",
+        "protocols": ["UN_emergency", "international_aid", "global_alert"],
+        "overrideAuthority": "UN_Secretary_General"
+      },
+      "inputs": ["emergency_level"],
+      "outputs": ["international_response"]
+    },
+    {
+      "id": "response_monitoring",
+      "type": "monitoring",
+      "label": "Response Monitoring",
+      "description": "Monitor emergency response effectiveness",
+      "position": { "x": 1500, "y": 100 },
+      "config": {
+        "monitoringInterval": 30000,
+        "keyMetrics": ["response_time", "resource_utilization", "impact_mitigation", "communication_status"],
+        "alertThresholds": {
+          "response_delay": 300000,
+          "resource_shortage": 0.8,
+          "communication_failure": "any"
+        }
+      },
+      "inputs": ["response_activated", "coordination_established", "command_activated"],
+      "outputs": ["monitoring_report", "adjustment_recommendations"]
+    },
+    {
+      "id": "continuous_updates",
+      "type": "update_loop",
+      "label": "Continuous Situation Updates",
+      "description": "Provide continuous updates to all stakeholders",
+      "position": { "x": 1700, "y": 100 },
+      "config": {
+        "updateFrequency": 60000,
+        "stakeholders": ["public", "media", "government", "international"],
+        "updateChannels": ["news_feeds", "social_media", "emergency_broadcast", "secure_channels"],
+        "accuracyVerification": true
+      },
+      "inputs": ["monitoring_report"],
+      "outputs": ["public_updates", "stakeholder_updates"]
+    },
+    {
+      "id": "recovery_coordination",
+      "type": "recovery",
+      "label": "Recovery & De-escalation",
+      "description": "Coordinate recovery efforts and de-escalation",
+      "position": { "x": 1900, "y": 100 },
+      "config": {
+        "recoveryPhases": ["immediate", "short_term", "medium_term", "long_term"],
+        "resourceTransition": "gradual",
+        "monitoringContinuation": true,
+        "deEscalationCriteria": ["threat_level", "response_capacity", "recovery_progress"]
+      },
+      "inputs": ["monitoring_report", "action_plan"],
+      "outputs": ["recovery_plan", "deescalation_status"]
+    }
+  ],
+  "edges": [
+    {
+      "id": "intake_to_triage",
+      "source": "emergency_intake",
+      "target": "immediate_ai_triage",
+      "condition": "emergency_data_received"
+    },
+    {
+      "id": "triage_to_verification",
+      "source": "immediate_ai_triage",
+      "target": "parallel_verification",
+      "condition": "triage_complete"
+    },
+    {
+      "id": "verification_to_impact",
+      "source": "parallel_verification",
+      "target": "impact_assessment",
+      "condition": "verification_complete"
+    },
+    {
+      "id": "impact_to_decision",
+      "source": "impact_assessment",
+      "target": "emergency_decision",
+      "condition": "assessment_complete"
+    },
+    {
+      "id": "decision_to_auto_response",
+      "source": "emergency_decision",
+      "target": "auto_response_activation",
+      "condition": "auto_response"
+    },
+    {
+      "id": "decision_to_coordination",
+      "source": "emergency_decision",
+      "target": "coordination_call",
+      "condition": "coordination_required"
+    },
+    {
+      "id": "decision_to_command",
+      "source": "emergency_decision",
+      "target": "command_center_activation",
+      "condition": "command_required"
+    },
+    {
+      "id": "decision_to_max_escalation",
+      "source": "emergency_decision",
+      "target": "maximum_escalation",
+      "condition": "maximum_escalation"
+    },
+    {
+      "id": "auto_response_to_monitoring",
+      "source": "auto_response_activation",
+      "target": "response_monitoring",
+      "condition": "response_activated"
+    },
+    {
+      "id": "coordination_to_monitoring",
+      "source": "coordination_call",
+      "target": "response_monitoring",
+      "condition": "coordination_established"
+    },
+    {
+      "id": "command_to_monitoring",
+      "source": "command_center_activation",
+      "target": "response_monitoring",
+      "condition": "command_activated"
+    },
+    {
+      "id": "max_escalation_to_monitoring",
+      "source": "maximum_escalation",
+      "target": "response_monitoring",
+      "condition": "international_response"
+    },
+    {
+      "id": "monitoring_to_updates",
+      "source": "response_monitoring",
+      "target": "continuous_updates",
+      "condition": "monitoring_active"
+    },
+    {
+      "id": "updates_to_recovery",
+      "source": "continuous_updates",
+      "target": "recovery_coordination",
+      "condition": "recovery_criteria_met"
+    }
+  ],
+  "variables": {
+    "emergencyMode": true,
+    "responsePriority": "critical",
+    "notificationEnabled": true,
+    "coordinationEnabled": true,
+    "internationalEscalationEnabled": true,
+    "monitoringEnabled": true,
+    "recoveryEnabled": true
+  },
+  "permissions": {
+    "view": ["analyst", "supervisor", "admin"],
+    "edit": ["supervisor", "admin"],
+    "execute": ["system", "supervisor", "admin"],
+    "delete": ["admin"]
+  },
+  "metadata": {
+    "category": "emergency_response",
+    "tags": ["emergency", "critical", "rapid_response"],
+    "estimatedDuration": 1800000,
+    "successRate": 0.98,
+    "usageCount": 0
+  }
+}

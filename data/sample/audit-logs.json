@@ -1,0 +1,56 @@
+[
+  {
+    "anomalyId": "sample-anomaly-001",
+    "action": "created",
+    "actor": "system",
+    "reasoning": "Autonomous anomaly detection from weather satellite data",
+    "confidence": 0.92,
+    "changes": {
+      "created": true
+    },
+    "metadata": {
+      "detectionMethod": "AI_analysis",
+      "dataSources": [
+        "NOAA",
+        "WeatherAPI"
+      ],
+      "processingTime": 45000
+    },
+    "timestamp": "2025-11-18T05:30:00Z"
+  },
+  {
+    "anomalyId": "sample-anomaly-001",
+    "action": "updated",
+    "actor": "ai",
+    "reasoning": "AI analysis completed with cross-verification",
+    "confidence": 0.92,
+    "changes": {
+      "aiAnalysis": "completed",
+      "crossVerification": "confirmed"
+    },
+    "metadata": {
+      "aiModel": "gemini-pro-vision",
+      "verificationSources": 3,
+      "processingTime": 120000
+    },
+    "timestamp": "2025-11-18T05:45:00Z"
+  },
+  {
+    "anomalyId": "sample-anomaly-001",
+    "action": "approved",
+    "actor": "human",
+    "actorId": "analyst_001",
+    "reasoning": "Manual review confirms critical hurricane threat",
+    "confidence": 0.95,
+    "changes": {
+      "status": "approved",
+      "severity": "critical"
+    },
+    "metadata": {
+      "reviewer": "Dr. Sarah Chen",
+      "reviewTime": 300000,
+      "additionalNotes": "Immediate evacuation recommended"
+    },
+    "timestamp": "2025-11-18T07:00:00Z"
+  }
+]
