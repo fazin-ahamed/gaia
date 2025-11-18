@@ -20,6 +20,7 @@ const opusRoutes = require('./routes/opus');
 const statsRoutes = require('./routes/stats');
 const alertsRoutes = require('./routes/alerts');
 const aiStatusRoutes = require('./routes/ai-status');
+const environmentalRoutes = require('./routes/environmental');
 const { initializeDatabase } = require('./models');
 const { startDataIngestion } = require('./services/dataIngestion');
 const { initializeGeminiAI } = require('./services/geminiAI');
@@ -133,6 +134,7 @@ app.use('/api/opus', opusRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/alerts', alertsRoutes);
 app.use('/api/ai', aiStatusRoutes);
+app.use('/api/environmental', environmentalRoutes);
 
 // Health check
 app.get('/health', (req, res) => {

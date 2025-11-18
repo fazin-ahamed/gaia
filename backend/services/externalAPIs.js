@@ -10,17 +10,30 @@ const logger = winston.createLogger({
   ]
 });
 
-// Weather Data Collection
+// Weather Data Collection (Updated with OpenWeatherMap 3.0 One Call API)
 async function fetchWeatherData(lat, lon) {
   try {
-    const [openWeather, weatherBit, noaa] = await Promise.allSettled([
-      // OpenWeather API
-      axios.get(`https://api.openweathermap.org/data/2.5/weather`, {
-        params: { lat, lon, appid: process.env.OPENWEATHER_API_KEY }
+    const [openWeather, openMeteo, noaa] = await Promise.allSettled([
+      // OpenWeatherMap One Call API 3.0
+      axios.get(`https://api.openweathermap.org/data/3.0/onecall`, {
+        params: { 
+          lat, 
+          lon, 
+          appid: process.env.OPENWEATHER_API_KEY,
+          units: 'metric',
+          exclude: 'minutely'
+        }
       }),
-      // WeatherBit API
-      axios.get(`https://api.weatherbit.io/v2.0/current`, {
-        params: { lat, lon, key: process.env.WEATHERBIT_API_KEY }
+      // Open-Meteo API (free, no API key needed)
+      axios.get(`https://api.open-meteo.com/v1/forecast`, {
+        params: {
+          latitude: lat,
+          longitude: lon,
+          current: 'temperature_2m,relative_humidity_2m,precipitation,wind_speed_10m,pressure_msl',
+          hourly: 'temperature_2m,precipitation_probability',
+          daily: 'temperature_2m_max,temperature_2m_min,precipitation_sum',
+          timezone: 'auto'
+        }
       }),
       // NOAA API (if coordinates in US)
       axios.get(`https://api.weather.gov/points/${lat},${lon}`)
@@ -28,7 +41,7 @@ async function fetchWeatherData(lat, lon) {
 
     return {
       openWeather: openWeather.status === 'fulfilled' ? openWeather.value.data : null,
-      weatherBit: weatherBit.status === 'fulfilled' ? weatherBit.value.data : null,
+      openMeteo: openMeteo.status === 'fulfilled' ? openMeteo.value.data : null,
       noaa: noaa.status === 'fulfilled' ? noaa.value.data : null,
       timestamp: new Date().toISOString()
     };
@@ -38,13 +51,17 @@ async function fetchWeatherData(lat, lon) {
   }
 }
 
-// Air Quality Data
+// Air Quality Data (Updated with OpenAQ v3 API)
 async function fetchAirQuality(lat, lon) {
   try {
     const [openAQ, aqicn] = await Promise.allSettled([
-      // OpenAQ API
-      axios.get(`https://api.openaq.org/v2/latest`, {
-        params: { coordinates: `${lat},${lon}`, radius: 25000 },
+      // OpenAQ API v3 - Find nearest locations
+      axios.get(`https://api.openaq.org/v3/locations`, {
+        params: { 
+          coordinates: `${lat},${lon}`,
+          radius: 25000,
+          limit: 10
+        },
         headers: { 'X-API-Key': process.env.OPENAQ_API_KEY }
       }),
       // AQICN API
@@ -64,26 +81,147 @@ async function fetchAirQuality(lat, lon) {
   }
 }
 
-// News & Events Data (Using GNews API)
-async function fetchNewsData(query = 'anomaly', country = 'us') {
+// Fetch specific OpenAQ location by ID
+async function fetchOpenAQLocation(locationId) {
   try {
-    // Use GNews API instead of NewsAPI
-    const response = await axios.get(`https://gnews.io/api/v4/search`, {
+    const response = await axios.get(`https://api.openaq.org/v3/locations/${locationId}`, {
+      headers: { 'X-API-Key': process.env.OPENAQ_API_KEY }
+    });
+    return response.data;
+  } catch (error) {
+    logger.error('OpenAQ location fetch error:', error.message);
+    return null;
+  }
+}
+
+// Fetch OpenAQ countries
+async function fetchOpenAQCountries() {
+  try {
+    const response = await axios.get(`https://api.openaq.org/v3/countries`, {
+      headers: { 'X-API-Key': process.env.OPENAQ_API_KEY }
+    });
+    return response.data;
+  } catch (error) {
+    logger.error('OpenAQ countries fetch error:', error.message);
+    return null;
+  }
+}
+
+// USGS Earthquake Data (for specific regions like UAE/Iran)
+async function fetchEarthquakeData(minLat, maxLat, minLon, maxLon, minMagnitude = 2) {
+  try {
+    const response = await axios.get(`https://earthquake.usgs.gov/fdsnws/event/1/query`, {
       params: {
-        q: query,
-        lang: 'en',
-        country: country,
-        max: 10,
-        apikey: process.env.GNEWS_API_KEY
+        format: 'geojson',
+        minmagnitude: minMagnitude,
+        minlatitude: minLat,
+        maxlatitude: maxLat,
+        minlongitude: minLon,
+        maxlongitude: maxLon,
+        orderby: 'time'
       }
     });
 
-    // GNews returns articles in response.articles
-    return response.data.articles || [];
+    return response.data || null;
   } catch (error) {
-    logger.error('GNews API error:', error.message);
-    // Fallback: return empty array instead of failing
+    logger.error('USGS Earthquake API error:', error.message);
+    return null;
+  }
+}
+
+// Fetch earthquakes for UAE/Iran region
+async function fetchUAEIranEarthquakes() {
+  return fetchEarthquakeData(22, 26, 51, 57, 2);
+}
+
+// Fetch earthquakes near coordinates
+async function fetchNearbyEarthquakes(lat, lon, radiusDegrees = 2, minMagnitude = 2) {
+  return fetchEarthquakeData(
+    lat - radiusDegrees,
+    lat + radiusDegrees,
+    lon - radiusDegrees,
+    lon + radiusDegrees,
+    minMagnitude
+  );
+}
+
+// News & Events Data (Using NewsAPI.org and GNews as fallback)
+async function fetchNewsData(query = 'anomaly', country = 'us') {
+  try {
+    // Try NewsAPI.org first (v2/everything endpoint)
+    if (process.env.NEWSAPI_KEY) {
+      try {
+        const response = await axios.get(`https://newsapi.org/v2/everything`, {
+          params: {
+            q: query,
+            apiKey: process.env.NEWSAPI_KEY,
+            language: 'en',
+            sortBy: 'publishedAt',
+            pageSize: 10
+          }
+        });
+
+        if (response.data.status === 'ok' && response.data.articles) {
+          return response.data.articles;
+        }
+      } catch (newsApiError) {
+        logger.warn('NewsAPI.org error, trying GNews fallback:', newsApiError.message);
+      }
+    }
+
+    // Fallback to GNews API
+    if (process.env.GNEWS_API_KEY) {
+      const response = await axios.get(`https://gnews.io/api/v4/search`, {
+        params: {
+          q: query,
+          lang: 'en',
+          country: country,
+          max: 10,
+          apikey: process.env.GNEWS_API_KEY
+        }
+      });
+
+      return response.data.articles || [];
+    }
+
     return [];
+  } catch (error) {
+    logger.error('News API error:', error.message);
+    return [];
+  }
+}
+
+// Fetch news from NewsAPI.org specifically
+async function fetchNewsAPIData(query = 'anomaly', options = {}) {
+  try {
+    if (!process.env.NEWSAPI_KEY) {
+      logger.warn('NewsAPI key not configured');
+      return [];
+    }
+
+    const params = {
+      q: query,
+      apiKey: process.env.NEWSAPI_KEY,
+      language: options.language || 'en',
+      sortBy: options.sortBy || 'publishedAt',
+      pageSize: options.pageSize || 10,
+      ...options
+    };
+
+    const response = await axios.get(`https://newsapi.org/v2/everything`, { params });
+
+    if (response.data.status === 'ok') {
+      return {
+        status: response.data.status,
+        totalResults: response.data.totalResults,
+        articles: response.data.articles
+      };
+    }
+
+    return { status: 'error', totalResults: 0, articles: [] };
+  } catch (error) {
+    logger.error('NewsAPI.org fetch error:', error.message);
+    return { status: 'error', totalResults: 0, articles: [] };
   }
 }
 
@@ -117,7 +255,7 @@ async function processWithGemini(text, prompt = 'Analyze this text for anomalies
 
     const { GoogleGenerativeAI } = require('@google/generative-ai');
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
+    const model = genAI.getGenerativeModel({ model: 'gemini-2.5-flash' });
 
     const fullPrompt = `${prompt}: "${text}"`;
     const result = await model.generateContent(fullPrompt);
@@ -133,12 +271,13 @@ async function processWithGemini(text, prompt = 'Analyze this text for anomalies
   }
 }
 
-// Aggregate Multi-Source Data (with GNews)
+// Aggregate Multi-Source Data (with all APIs)
 async function aggregateAnomalyData(lat, lon, query) {
   try {
-    const [weather, airQuality, news] = await Promise.all([
+    const [weather, airQuality, earthquakes, news] = await Promise.all([
       fetchWeatherData(lat, lon),
       fetchAirQuality(lat, lon),
+      fetchNearbyEarthquakes(lat, lon, 2, 2),
       fetchNewsData(query || 'anomaly')
     ]);
 
@@ -146,6 +285,7 @@ async function aggregateAnomalyData(lat, lon, query) {
       location: { lat, lon },
       weather,
       airQuality,
+      earthquakes,
       news,
       timestamp: new Date().toISOString()
     };
@@ -193,6 +333,18 @@ async function analyzeWithAgentSwarm(data) {
         agentId: 'airquality-agent-001',
         confidence: aqAnomaly.confidence,
         output: aqAnomaly.description,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Earthquake Analysis Agent
+    if (data.earthquakes) {
+      const eqAnomaly = detectEarthquakeAnomaly(data.earthquakes);
+      agents.push({
+        type: 'seismic',
+        agentId: 'earthquake-agent-001',
+        confidence: eqAnomaly.confidence,
+        output: eqAnomaly.description,
         timestamp: new Date().toISOString()
       });
     }
@@ -257,6 +409,38 @@ function detectAirQualityAnomaly(aqData) {
   return { confidence, description };
 }
 
+// Helper: Detect Earthquake Anomalies
+function detectEarthquakeAnomaly(earthquakeData) {
+  let confidence = 0.5;
+  let description = 'No significant seismic activity';
+
+  if (earthquakeData?.features && earthquakeData.features.length > 0) {
+    const earthquakes = earthquakeData.features;
+    const maxMagnitude = Math.max(...earthquakes.map(eq => eq.properties.mag || 0));
+    const recentCount = earthquakes.filter(eq => {
+      const time = new Date(eq.properties.time);
+      const hourAgo = new Date(Date.now() - 3600000);
+      return time > hourAgo;
+    }).length;
+
+    if (maxMagnitude >= 5.0) {
+      confidence = 0.95;
+      description = `Major earthquake detected (Magnitude ${maxMagnitude.toFixed(1)})`;
+    } else if (maxMagnitude >= 4.0) {
+      confidence = 0.85;
+      description = `Moderate earthquake detected (Magnitude ${maxMagnitude.toFixed(1)})`;
+    } else if (recentCount >= 5) {
+      confidence = 0.80;
+      description = `Earthquake swarm detected (${recentCount} events in last hour)`;
+    } else if (earthquakes.length > 0) {
+      confidence = 0.65;
+      description = `${earthquakes.length} earthquake(s) detected (Max magnitude: ${maxMagnitude.toFixed(1)})`;
+    }
+  }
+
+  return { confidence, description };
+}
+
 
 
 // Fetch hotspots (used by stats)
@@ -295,7 +479,13 @@ async function fetchHotspots() {
 module.exports = {
   fetchWeatherData,
   fetchAirQuality,
+  fetchOpenAQLocation,
+  fetchOpenAQCountries,
+  fetchEarthquakeData,
+  fetchUAEIranEarthquakes,
+  fetchNearbyEarthquakes,
   fetchNewsData,
+  fetchNewsAPIData,
   fetchGDELTEvents,
   processWithGemini,
   aggregateAnomalyData,
