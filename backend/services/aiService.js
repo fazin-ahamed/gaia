@@ -25,7 +25,11 @@ const RATE_LIMITS = {
     currentMinute: 0,
     currentDay: 0,
     lastMinuteReset: Date.now(),
-    lastDayReset: Date.now()
+    lastDayReset: Date.now(),
+    consecutiveFailures: 0,
+    maxConsecutiveFailures: 5,
+    failureTimeout: null,
+    failureTimeoutDuration: 5 * 60 * 1000 // 5 minutes
   }
 };
 
@@ -66,6 +70,18 @@ function checkRateLimit() {
   if (now - RATE_LIMITS.gemini.lastDayReset > 86400000) {
     RATE_LIMITS.gemini.currentDay = 0;
     RATE_LIMITS.gemini.lastDayReset = now;
+  }
+  
+  // Check if in failure timeout (too many consecutive failures)
+  if (RATE_LIMITS.gemini.failureTimeout && now < RATE_LIMITS.gemini.failureTimeout) {
+    const remainingTime = Math.ceil((RATE_LIMITS.gemini.failureTimeout - now) / 1000);
+    logger.warn(`Gemini temporarily disabled due to ${RATE_LIMITS.gemini.consecutiveFailures} consecutive failures. Retry in ${remainingTime}s`);
+    return false;
+  } else if (RATE_LIMITS.gemini.failureTimeout && now >= RATE_LIMITS.gemini.failureTimeout) {
+    // Timeout expired, reset failure counter
+    logger.info('Gemini failure timeout expired, resetting failure counter');
+    RATE_LIMITS.gemini.consecutiveFailures = 0;
+    RATE_LIMITS.gemini.failureTimeout = null;
   }
   
   // Check if limits exceeded
@@ -112,6 +128,10 @@ async function callGemini(prompt, imageParts = null) {
     const response = await result.response;
     const text = response.text();
     
+    // Success! Reset failure counter
+    RATE_LIMITS.gemini.consecutiveFailures = 0;
+    RATE_LIMITS.gemini.failureTimeout = null;
+    
     return {
       text,
       provider: 'gemini',
@@ -119,7 +139,17 @@ async function callGemini(prompt, imageParts = null) {
     };
 
   } catch (error) {
-    logger.error('Gemini API error:', error.message);
+    // Increment failure counter
+    RATE_LIMITS.gemini.consecutiveFailures++;
+    
+    logger.error(`Gemini API error (failure ${RATE_LIMITS.gemini.consecutiveFailures}/${RATE_LIMITS.gemini.maxConsecutiveFailures}):`, error.message);
+    
+    // If too many consecutive failures, disable Gemini temporarily
+    if (RATE_LIMITS.gemini.consecutiveFailures >= RATE_LIMITS.gemini.maxConsecutiveFailures) {
+      RATE_LIMITS.gemini.failureTimeout = Date.now() + RATE_LIMITS.gemini.failureTimeoutDuration;
+      logger.error(`Gemini disabled for ${RATE_LIMITS.gemini.failureTimeoutDuration / 1000}s due to ${RATE_LIMITS.gemini.consecutiveFailures} consecutive failures`);
+    }
+    
     throw error;
   }
 }
