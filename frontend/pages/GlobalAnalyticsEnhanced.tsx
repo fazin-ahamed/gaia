@@ -168,7 +168,7 @@ const GlobalAnalyticsEnhanced: React.FC = () => {
             </div>
 
             <div className="bg-black/30 rounded-lg overflow-hidden" style={{ height: '500px' }}>
-              <InteractiveMapEnhanced />
+              <InteractiveMapEnhanced viewMode={mapView} />
             </div>
 
             <div className="mt-4 flex items-center justify-between text-sm">

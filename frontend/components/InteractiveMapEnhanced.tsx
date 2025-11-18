@@ -4,9 +4,10 @@ import { apiService, Hotspot } from '../src/services/apiService';
 
 interface InteractiveMapEnhancedProps {
   onHotspotClick?: (hotspot: Hotspot) => void;
+  viewMode?: 'heatmap' | 'clusters' | 'forecast';
 }
 
-const InteractiveMapEnhanced: React.FC<InteractiveMapEnhancedProps> = ({ onHotspotClick }) => {
+const InteractiveMapEnhanced: React.FC<InteractiveMapEnhancedProps> = ({ onHotspotClick, viewMode = 'heatmap' }) => {
   const [hotspots, setHotspots] = useState<Hotspot[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedHotspot, setSelectedHotspot] = useState<Hotspot | null>(null);
@@ -82,43 +83,138 @@ const InteractiveMapEnhanced: React.FC<InteractiveMapEnhancedProps> = ({ onHotsp
         </div>
       )}
 
-      {/* Hotspots */}
+      {/* Hotspots - Different rendering based on view mode */}
       <div className="absolute inset-0">
         {hotspots.map((hotspot, index) => {
           // Convert lat/lon to screen coordinates (simplified projection)
           const x = ((hotspot.lon + 180) / 360) * 100;
           const y = ((90 - hotspot.lat) / 180) * 100;
 
-          return (
-            <div
-              key={index}
-              className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
-              style={{ left: `${x}%`, top: `${y}%` }}
-              onClick={() => handleHotspotClick(hotspot)}
-            >
-              {/* Pulsing Circle */}
+          // Heatmap view - pulsing circles
+          if (viewMode === 'heatmap') {
+            return (
               <div
-                className="w-4 h-4 rounded-full animate-pulse"
-                style={{
-                  backgroundColor: getSeverityColor(hotspot.severity),
-                  boxShadow: `0 0 20px ${getSeverityColor(hotspot.severity)}`
-                }}
-              />
-              
-              {/* Tooltip */}
-              <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
-                <div className="bg-black/90 text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap">
-                  <div className="font-semibold">{hotspot.name}</div>
-                  <div className="text-gray-400">
-                    Severity: {hotspot.severity}
-                  </div>
-                  <div className="text-gray-400">
-                    Consensus: {(hotspot.analysis.consensus * 100).toFixed(0)}%
+                key={index}
+                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
+                style={{ left: `${x}%`, top: `${y}%` }}
+                onClick={() => handleHotspotClick(hotspot)}
+              >
+                {/* Pulsing Circle */}
+                <div
+                  className="w-4 h-4 rounded-full animate-pulse"
+                  style={{
+                    backgroundColor: getSeverityColor(hotspot.severity),
+                    boxShadow: `0 0 20px ${getSeverityColor(hotspot.severity)}`
+                  }}
+                />
+                
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                  <div className="bg-black/90 text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                    <div className="font-semibold">{hotspot.name}</div>
+                    <div className="text-gray-400">
+                      Severity: {hotspot.severity}
+                    </div>
+                    <div className="text-gray-400">
+                      Consensus: {(hotspot.analysis.consensus * 100).toFixed(0)}%
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
+            );
+          }
+
+          // Clusters view - larger circles with agent count
+          if (viewMode === 'clusters') {
+            const agentCount = hotspot.analysis.agents.length;
+            const size = Math.min(8 + agentCount * 2, 32); // Scale size based on agents
+            
+            return (
+              <div
+                key={index}
+                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
+                style={{ left: `${x}%`, top: `${y}%` }}
+                onClick={() => handleHotspotClick(hotspot)}
+              >
+                {/* Cluster Circle */}
+                <div
+                  className="rounded-full flex items-center justify-center font-bold text-white border-2"
+                  style={{
+                    width: `${size}px`,
+                    height: `${size}px`,
+                    backgroundColor: getSeverityColor(hotspot.severity),
+                    borderColor: getSeverityColor(hotspot.severity),
+                    boxShadow: `0 0 30px ${getSeverityColor(hotspot.severity)}`,
+                    fontSize: `${Math.max(size / 3, 10)}px`
+                  }}
+                >
+                  {agentCount}
+                </div>
+                
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                  <div className="bg-black/90 text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                    <div className="font-semibold">{hotspot.name}</div>
+                    <div className="text-gray-400">
+                      Agents: {agentCount}
+                    </div>
+                    <div className="text-gray-400">
+                      Severity: {hotspot.severity}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          // Forecast view - animated expanding circles
+          if (viewMode === 'forecast') {
+            const confidence = hotspot.analysis.consensus;
+            
+            return (
+              <div
+                key={index}
+                className="absolute cursor-pointer transform -translate-x-1/2 -translate-y-1/2 group"
+                style={{ left: `${x}%`, top: `${y}%` }}
+                onClick={() => handleHotspotClick(hotspot)}
+              >
+                {/* Expanding forecast rings */}
+                <div className="relative">
+                  <div
+                    className="w-6 h-6 rounded-full animate-ping absolute"
+                    style={{
+                      backgroundColor: getSeverityColor(hotspot.severity),
+                      opacity: 0.3
+                    }}
+                  />
+                  <div
+                    className="w-6 h-6 rounded-full flex items-center justify-center relative"
+                    style={{
+                      backgroundColor: getSeverityColor(hotspot.severity),
+                      boxShadow: `0 0 25px ${getSeverityColor(hotspot.severity)}`
+                    }}
+                  >
+                    <AlertTriangle className="w-3 h-3 text-white" />
+                  </div>
+                </div>
+                
+                {/* Tooltip */}
+                <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 hidden group-hover:block z-10">
+                  <div className="bg-black/90 text-white px-3 py-2 rounded-lg text-xs whitespace-nowrap">
+                    <div className="font-semibold">{hotspot.name}</div>
+                    <div className="text-gray-400">
+                      Forecast Confidence: {(confidence * 100).toFixed(0)}%
+                    </div>
+                    <div className="text-gray-400">
+                      Risk: {hotspot.severity}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          }
+
+          return null;
         })}
       </div>
 
@@ -178,7 +274,11 @@ const InteractiveMapEnhanced: React.FC<InteractiveMapEnhancedProps> = ({ onHotsp
 
       {/* Legend */}
       <div className="absolute top-4 right-4 bg-black/80 rounded-lg p-3 text-white text-xs">
-        <div className="font-semibold mb-2">Severity</div>
+        <div className="font-semibold mb-2">
+          {viewMode === 'heatmap' && 'Severity Heatmap'}
+          {viewMode === 'clusters' && 'Agent Clusters'}
+          {viewMode === 'forecast' && 'Threat Forecast'}
+        </div>
         <div className="space-y-1">
           <div className="flex items-center space-x-2">
             <div className="w-3 h-3 rounded-full" style={{ backgroundColor: '#EF4444' }} />
@@ -197,6 +297,16 @@ const InteractiveMapEnhanced: React.FC<InteractiveMapEnhancedProps> = ({ onHotsp
             <span>Low</span>
           </div>
         </div>
+        {viewMode === 'clusters' && (
+          <div className="mt-2 pt-2 border-t border-white/10 text-gray-400">
+            Size = Agent count
+          </div>
+        )}
+        {viewMode === 'forecast' && (
+          <div className="mt-2 pt-2 border-t border-white/10 text-gray-400">
+            Pulsing = Predicted
+          </div>
+        )}
       </div>
 
       {/* Real-time Indicator */}
