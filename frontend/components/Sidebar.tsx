@@ -5,13 +5,13 @@ import { Home, BarChart2, Map, Settings, FileText, Info, HelpCircle, AlertTriang
 
 const Sidebar: React.FC = () => {
     const navItems = [
-        { path: '/dashboard-enhanced', icon: Home, label: 'Command Dashboard' },
+        { path: '/dashboard', icon: Home, label: 'Command Dashboard' },
         { path: '/upload', icon: UploadCloud, label: 'Upload Evidence' },
         { path: '/operations', icon: Network, label: 'Operations Console' },
         { path: '/alerts', icon: Bell, label: 'Alerts & Delivery' },
-        { path: '/analytics-enhanced', icon: Map, label: 'Global Analytics' },
+        { path: '/analytics', icon: Map, label: 'Global Analytics' },
         { path: '/verification/anom-001', icon: Shield, label: 'Verification' },
-        { path: '/incident-enhanced/anom-001', icon: AlertTriangle, label: 'Incident Details' },
+        { path: '/incident/anom-001', icon: AlertTriangle, label: 'Incident Details' },
         { path: '/audit/ANOM-001', icon: FileText, label: 'Audit Viewer' },
         { path: '/settings', icon: Settings, label: 'Settings' },
         { path: '/about', icon: Info, label: 'About GAIA 3.1' },

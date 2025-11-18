@@ -35,20 +35,21 @@ const AppContent: React.FC = () => {
             <main className="flex-1 overflow-y-auto">
                 <Routes>
                     <Route path="/" element={<LandingPage />} />
-                    <Route path="/dashboard" element={<Dashboard />} />
-                    <Route path="/dashboard-enhanced" element={<UserDashboardEnhanced />} />
+                    <Route path="/dashboard" element={<UserDashboardEnhanced />} />
+                    <Route path="/dashboard-old" element={<Dashboard />} />
                     <Route path="/report" element={<ReportAnomalyPage />} />
-                    <Route path="/upload" element={<AnomalyUploadReal />} />
+                    <Route path="/upload" element={<AnomalyUploadEnhanced />} />
+                    <Route path="/upload-real" element={<AnomalyUploadReal />} />
                     <Route path="/detection/:id" element={<AIDetectionPage />} />
                     <Route path="/workflow/:id" element={<OpusWorkflowPage />} />
                     <Route path="/review/:id" element={<HumanReviewPage />} />
-                    <Route path="/incident/:id" element={<IncidentDetailsPage />} />
-                    <Route path="/incident-enhanced/:id" element={<IncidentDetailsEnhanced />} />
+                    <Route path="/incident/:id" element={<IncidentDetailsEnhanced />} />
+                    <Route path="/incident-old/:id" element={<IncidentDetailsPage />} />
                     <Route path="/verification/:id" element={<VerificationPage />} />
                     <Route path="/operations" element={<OperationsConsole />} />
                     <Route path="/alerts" element={<AlertsDeliveryPage />} />
-                    <Route path="/analytics" element={<GlobalAnalyticsPage />} />
-                    <Route path="/analytics-enhanced" element={<GlobalAnalyticsEnhanced />} />
+                    <Route path="/analytics" element={<GlobalAnalyticsEnhanced />} />
+                    <Route path="/analytics-old" element={<GlobalAnalyticsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
                     <Route path="/audit/:id" element={<AuditViewerPage />} />
                     <Route path="/about" element={<AboutPage />} />
