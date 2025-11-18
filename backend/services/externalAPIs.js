@@ -244,7 +244,174 @@ async function fetchGDELTEvents() {
   }
 }
 
-// Traffic Data - Removed (not using TomTom API)
+// TomTom Traffic & Mapping APIs
+async function fetchTomTomTraffic(lat, lon, zoom = 12) {
+  try {
+    if (!process.env.TOMTOM_API_KEY) {
+      logger.warn('TomTom API key not configured');
+      return null;
+    }
+
+    // Traffic Flow API - Get traffic flow data
+    const trafficFlow = await axios.get(
+      `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/${zoom}/json`,
+      {
+        params: {
+          key: process.env.TOMTOM_API_KEY,
+          point: `${lat},${lon}`
+        }
+      }
+    );
+
+    return {
+      flow: trafficFlow.data,
+      timestamp: new Date().toISOString()
+    };
+  } catch (error) {
+    logger.error('TomTom traffic fetch error:', error.message);
+    return null;
+  }
+}
+
+// TomTom Traffic Incidents
+async function fetchTomTomIncidents(bbox) {
+  try {
+    if (!process.env.TOMTOM_API_KEY) {
+      logger.warn('TomTom API key not configured');
+      return null;
+    }
+
+    // Traffic Incidents API - Get traffic incidents in bounding box
+    const response = await axios.get(
+      `https://api.tomtom.com/traffic/services/5/incidentDetails`,
+      {
+        params: {
+          key: process.env.TOMTOM_API_KEY,
+          bbox: bbox, // Format: minLon,minLat,maxLon,maxLat
+          fields: '{incidents{type,geometry{type,coordinates},properties{iconCategory,magnitudeOfDelay,events{description,code,iconCategory},startTime,endTime,from,to,length,delay,roadNumbers,timeValidity}}}',
+          language: 'en-US',
+          categoryFilter: '0,1,2,3,4,5,6,7,8,9,10,11,14',
+          timeValidityFilter: 'present'
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    logger.error('TomTom incidents fetch error:', error.message);
+    return null;
+  }
+}
+
+// TomTom Routing API
+async function fetchTomTomRoute(startLat, startLon, endLat, endLon) {
+  try {
+    if (!process.env.TOMTOM_API_KEY) {
+      logger.warn('TomTom API key not configured');
+      return null;
+    }
+
+    const response = await axios.get(
+      `https://api.tomtom.com/routing/1/calculateRoute/${startLat},${startLon}:${endLat},${endLon}/json`,
+      {
+        params: {
+          key: process.env.TOMTOM_API_KEY,
+          traffic: true,
+          travelMode: 'car',
+          computeBestOrder: false
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    logger.error('TomTom routing fetch error:', error.message);
+    return null;
+  }
+}
+
+// TomTom Search API - Find places
+async function fetchTomTomSearch(query, lat, lon, radius = 10000) {
+  try {
+    if (!process.env.TOMTOM_API_KEY) {
+      logger.warn('TomTom API key not configured');
+      return null;
+    }
+
+    const response = await axios.get(
+      `https://api.tomtom.com/search/2/search/${encodeURIComponent(query)}.json`,
+      {
+        params: {
+          key: process.env.TOMTOM_API_KEY,
+          lat: lat,
+          lon: lon,
+          radius: radius,
+          limit: 10
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    logger.error('TomTom search fetch error:', error.message);
+    return null;
+  }
+}
+
+// TomTom Reverse Geocoding
+async function fetchTomTomReverseGeocode(lat, lon) {
+  try {
+    if (!process.env.TOMTOM_API_KEY) {
+      logger.warn('TomTom API key not configured');
+      return null;
+    }
+
+    const response = await axios.get(
+      `https://api.tomtom.com/search/2/reverseGeocode/${lat},${lon}.json`,
+      {
+        params: {
+          key: process.env.TOMTOM_API_KEY
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    logger.error('TomTom reverse geocode error:', error.message);
+    return null;
+  }
+}
+
+// Detect traffic anomalies
+function detectTrafficAnomaly(trafficData) {
+  let confidence = 0.5;
+  let description = 'Normal traffic conditions';
+
+  if (!trafficData) {
+    return { confidence, description };
+  }
+
+  // Check traffic flow data
+  if (trafficData.flow?.flowSegmentData) {
+    const flow = trafficData.flow.flowSegmentData;
+    const currentSpeed = flow.currentSpeed;
+    const freeFlowSpeed = flow.freeFlowSpeed;
+    const speedRatio = currentSpeed / freeFlowSpeed;
+
+    if (speedRatio < 0.3) {
+      confidence = 0.90;
+      description = `Severe traffic congestion detected (${Math.round(speedRatio * 100)}% of normal speed)`;
+    } else if (speedRatio < 0.5) {
+      confidence = 0.75;
+      description = `Heavy traffic detected (${Math.round(speedRatio * 100)}% of normal speed)`;
+    } else if (speedRatio < 0.7) {
+      confidence = 0.65;
+      description = `Moderate traffic detected (${Math.round(speedRatio * 100)}% of normal speed)`;
+    }
+  }
+
+  return { confidence, description };
+}
 
 // Use Gemini for AI processing
 async function processWithGemini(text, prompt = 'Analyze this text for anomalies') {
@@ -271,13 +438,14 @@ async function processWithGemini(text, prompt = 'Analyze this text for anomalies
   }
 }
 
-// Aggregate Multi-Source Data (with all APIs)
+// Aggregate Multi-Source Data (with all APIs including TomTom)
 async function aggregateAnomalyData(lat, lon, query) {
   try {
-    const [weather, airQuality, earthquakes, news] = await Promise.all([
+    const [weather, airQuality, earthquakes, traffic, news] = await Promise.all([
       fetchWeatherData(lat, lon),
       fetchAirQuality(lat, lon),
       fetchNearbyEarthquakes(lat, lon, 2, 2),
+      fetchTomTomTraffic(lat, lon),
       fetchNewsData(query || 'anomaly')
     ]);
 
@@ -286,6 +454,7 @@ async function aggregateAnomalyData(lat, lon, query) {
       weather,
       airQuality,
       earthquakes,
+      traffic,
       news,
       timestamp: new Date().toISOString()
     };
@@ -345,6 +514,18 @@ async function analyzeWithAgentSwarm(data) {
         agentId: 'earthquake-agent-001',
         confidence: eqAnomaly.confidence,
         output: eqAnomaly.description,
+        timestamp: new Date().toISOString()
+      });
+    }
+
+    // Traffic Analysis Agent
+    if (data.traffic) {
+      const trafficAnomaly = detectTrafficAnomaly(data.traffic);
+      agents.push({
+        type: 'traffic',
+        agentId: 'traffic-agent-001',
+        confidence: trafficAnomaly.confidence,
+        output: trafficAnomaly.description,
         timestamp: new Date().toISOString()
       });
     }
@@ -487,6 +668,11 @@ module.exports = {
   fetchNewsData,
   fetchNewsAPIData,
   fetchGDELTEvents,
+  fetchTomTomTraffic,
+  fetchTomTomIncidents,
+  fetchTomTomRoute,
+  fetchTomTomSearch,
+  fetchTomTomReverseGeocode,
   processWithGemini,
   aggregateAnomalyData,
   analyzeWithAgentSwarm,

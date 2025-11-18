@@ -10,6 +10,11 @@ const {
   fetchNearbyEarthquakes,
   fetchNewsData,
   fetchNewsAPIData,
+  fetchTomTomTraffic,
+  fetchTomTomIncidents,
+  fetchTomTomRoute,
+  fetchTomTomSearch,
+  fetchTomTomReverseGeocode,
   aggregateAnomalyData
 } = require('../services/externalAPIs');
 
@@ -162,6 +167,118 @@ router.get('/news/newsapi', async (req, res) => {
   } catch (error) {
     console.error('NewsAPI fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch NewsAPI data' });
+  }
+});
+
+// Get traffic data
+router.get('/traffic', async (req, res) => {
+  try {
+    const { lat, lon, zoom } = req.query;
+    
+    if (!lat || !lon) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const trafficData = await fetchTomTomTraffic(
+      parseFloat(lat),
+      parseFloat(lon),
+      zoom ? parseInt(zoom) : 12
+    );
+    
+    res.json(trafficData);
+  } catch (error) {
+    console.error('Traffic fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch traffic data' });
+  }
+});
+
+// Get traffic incidents in bounding box
+router.get('/traffic/incidents', async (req, res) => {
+  try {
+    const { bbox } = req.query;
+    
+    if (!bbox) {
+      return res.status(400).json({ 
+        error: 'Bounding box is required (format: minLon,minLat,maxLon,maxLat)' 
+      });
+    }
+
+    const incidents = await fetchTomTomIncidents(bbox);
+    res.json(incidents);
+  } catch (error) {
+    console.error('Traffic incidents fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch traffic incidents' });
+  }
+});
+
+// Get route between two points
+router.get('/traffic/route', async (req, res) => {
+  try {
+    const { startLat, startLon, endLat, endLon } = req.query;
+    
+    if (!startLat || !startLon || !endLat || !endLon) {
+      return res.status(400).json({ 
+        error: 'Start and end coordinates are required' 
+      });
+    }
+
+    const route = await fetchTomTomRoute(
+      parseFloat(startLat),
+      parseFloat(startLon),
+      parseFloat(endLat),
+      parseFloat(endLon)
+    );
+    
+    res.json(route);
+  } catch (error) {
+    console.error('Route fetch error:', error);
+    res.status(500).json({ error: 'Failed to fetch route' });
+  }
+});
+
+// Search for places
+router.get('/traffic/search', async (req, res) => {
+  try {
+    const { query, lat, lon, radius } = req.query;
+    
+    if (!query || !lat || !lon) {
+      return res.status(400).json({ 
+        error: 'Query, latitude, and longitude are required' 
+      });
+    }
+
+    const results = await fetchTomTomSearch(
+      query,
+      parseFloat(lat),
+      parseFloat(lon),
+      radius ? parseInt(radius) : 10000
+    );
+    
+    res.json(results);
+  } catch (error) {
+    console.error('Search fetch error:', error);
+    res.status(500).json({ error: 'Failed to search places' });
+  }
+});
+
+// Reverse geocode coordinates
+router.get('/traffic/reverse-geocode', async (req, res) => {
+  try {
+    const { lat, lon } = req.query;
+    
+    if (!lat || !lon) {
+      return res.status(400).json({ error: 'Latitude and longitude are required' });
+    }
+
+    const address = await fetchTomTomReverseGeocode(
+      parseFloat(lat),
+      parseFloat(lon)
+    );
+    
+    res.json(address);
+  } catch (error) {
+    console.error('Reverse geocode error:', error);
+    res.status(500).json({ error: 'Failed to reverse geocode' });
   }
 });
 

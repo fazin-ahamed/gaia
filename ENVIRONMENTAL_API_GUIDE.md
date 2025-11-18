@@ -54,7 +54,22 @@ const params = {
 };
 ```
 
-### 5. NewsAPI.org
+### 5. TomTom Traffic & Mapping APIs
+Real-time traffic flow, incidents, routing, and location services.
+
+**Traffic Flow**: `https://api.tomtom.com/traffic/services/4/flowSegmentData/absolute/{zoom}/json`
+**Traffic Incidents**: `https://api.tomtom.com/traffic/services/5/incidentDetails`
+**Routing**: `https://api.tomtom.com/routing/1/calculateRoute/{start}:{end}/json`
+**Search**: `https://api.tomtom.com/search/2/search/{query}.json`
+**Reverse Geocoding**: `https://api.tomtom.com/search/2/reverseGeocode/{lat},{lon}.json`
+
+**Use Cases**:
+- Real-time traffic monitoring
+- Accident and incident detection
+- Emergency response routing
+- Location intelligence
+
+### 6. NewsAPI.org
 Real-time news articles from thousands of sources worldwide.
 
 **Base URL**: `https://newsapi.org/v2/everything`
@@ -150,6 +165,36 @@ GET /api/environmental/news/newsapi?query={searchTerm}&language={lang}&sortBy={s
 ```
 Get news specifically from NewsAPI.org with full control over parameters.
 
+### Traffic Data
+```
+GET /api/environmental/traffic?lat={lat}&lon={lon}&zoom={zoom}
+```
+Get real-time traffic flow data.
+
+### Traffic Incidents
+```
+GET /api/environmental/traffic/incidents?bbox={minLon},{minLat},{maxLon},{maxLat}
+```
+Get traffic incidents (accidents, road closures, etc.) in a bounding box.
+
+### Route Calculation
+```
+GET /api/environmental/traffic/route?startLat={lat}&startLon={lon}&endLat={lat}&endLon={lon}
+```
+Calculate optimal route with real-time traffic.
+
+### Place Search
+```
+GET /api/environmental/traffic/search?query={term}&lat={lat}&lon={lon}&radius={meters}
+```
+Search for places and points of interest.
+
+### Reverse Geocoding
+```
+GET /api/environmental/traffic/reverse-geocode?lat={lat}&lon={lon}
+```
+Convert coordinates to address.
+
 ### Comprehensive Environmental Data
 ```
 GET /api/environmental/comprehensive?lat={lat}&lon={lon}&query={searchTerm}
@@ -175,6 +220,9 @@ NEWSAPI_KEY=1d68c651803f430ca16d89967d8da37c
 
 # GNews API (optional fallback for news)
 GNEWS_API_KEY=your_gnews_key_here
+
+# TomTom API (required for traffic data)
+TOMTOM_API_KEY=ZhWiSCOn92QUayZUB210bZjSjzFhbylO
 
 # Open-Meteo (no key required - free service)
 # USGS Earthquake API (no key required - free service)

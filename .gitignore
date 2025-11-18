@@ -68,3 +68,4 @@ coverage/
 # Production
 /build
 /dist
+BUILD_FROM_SCRATCH_PROMPT.md
