@@ -64,24 +64,11 @@ async function fetchAirQuality(lat, lon) {
   }
 }
 
-// News & Events Data
+// News & Events Data (Disabled - API removed)
 async function fetchNewsData(query = 'anomaly OR unusual OR strange') {
-  try {
-    const response = await axios.get(`https://newsapi.org/v2/everything`, {
-      params: {
-        q: query,
-        sortBy: 'publishedAt',
-        language: 'en',
-        pageSize: 20,
-        apiKey: process.env.NEWSAPI_KEY
-      }
-    });
-
-    return response.data.articles || [];
-  } catch (error) {
-    logger.error('News data fetch error:', error.message);
-    return [];
-  }
+  // News API disabled to prevent fetch errors
+  logger.info('News API disabled - returning empty array');
+  return [];
 }
 
 // GDELT Global Events
@@ -130,20 +117,19 @@ async function processWithGemini(text, prompt = 'Analyze this text for anomalies
   }
 }
 
-// Aggregate Multi-Source Data (without traffic)
+// Aggregate Multi-Source Data (without traffic and news)
 async function aggregateAnomalyData(lat, lon, query) {
   try {
-    const [weather, airQuality, news] = await Promise.all([
+    const [weather, airQuality] = await Promise.all([
       fetchWeatherData(lat, lon),
-      fetchAirQuality(lat, lon),
-      fetchNewsData(query)
+      fetchAirQuality(lat, lon)
     ]);
 
     return {
       location: { lat, lon },
       weather,
       airQuality,
-      news,
+      news: [], // News API disabled
       timestamp: new Date().toISOString()
     };
   } catch (error) {

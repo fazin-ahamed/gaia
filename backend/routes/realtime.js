@@ -43,13 +43,12 @@ router.get('/air-quality', async (req, res) => {
 
 // Get news data
 router.get('/news', async (req, res) => {
-  try {
-    const { query } = req.query;
-    const data = await fetchNewsData(query);
-    res.json(data);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+  // News API disabled to prevent fetch errors
+  res.json({ 
+    articles: [], 
+    message: 'News API temporarily disabled',
+    status: 'disabled'
+  });
 });
 
 // Get GDELT events

@@ -46,13 +46,14 @@ const API_CONFIGS = {
     }
   ],
   news: [
-    {
-      name: 'newsapi',
-      baseUrl: 'https://newsapi.org/v2',
-      endpoints: ['top-headlines', 'everything'],
-      params: { apiKey: process.env.NEWSAPI_KEY },
-      requiresLocation: false,
-    },
+    // NewsAPI disabled to prevent fetch errors
+    // {
+    //   name: 'newsapi',
+    //   baseUrl: 'https://newsapi.org/v2',
+    //   endpoints: ['top-headlines', 'everything'],
+    //   params: { apiKey: process.env.NEWSAPI_KEY },
+    //   requiresLocation: false,
+    // },
     {
       name: 'gdeltdata',
       baseUrl: 'https://api.gdeltproject.org/api/v2',
