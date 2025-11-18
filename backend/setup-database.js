@@ -12,6 +12,14 @@ const path = require('path');
 
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
+// Check if DATABASE_URL is set
+if (!process.env.DATABASE_URL) {
+  console.error('❌ ERROR: DATABASE_URL environment variable is not set');
+  console.error('Please set DATABASE_URL in your environment variables');
+  console.error('Example: postgresql://user:password@host:port/database');
+  process.exit(1);
+}
+
 // Initialize Sequelize
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',

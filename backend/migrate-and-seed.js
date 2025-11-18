@@ -69,6 +69,23 @@ const getDatabaseConfig = () => {
     };
   }
 
+  // Check if we have any database configuration
+  if (!process.env.DB_NAME && !process.env.DB_HOST) {
+    logError('No database configuration found!');
+    logError('Please set either DATABASE_URL or DB_* environment variables');
+    logError('');
+    logError('Option 1 - DATABASE_URL:');
+    logError('  DATABASE_URL=postgresql://user:password@host:port/database');
+    logError('');
+    logError('Option 2 - Individual variables:');
+    logError('  DB_NAME=gaia');
+    logError('  DB_USER=postgres');
+    logError('  DB_PASSWORD=your_password');
+    logError('  DB_HOST=localhost');
+    logError('  DB_PORT=5432');
+    process.exit(1);
+  }
+
   log('Using individual DB_* variables for connection', 'blue');
   return {
     database: process.env.DB_NAME || 'gaia',
