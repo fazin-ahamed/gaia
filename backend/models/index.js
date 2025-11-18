@@ -28,7 +28,7 @@ async function initializeDatabase(sequelize) {
   anomalyModel.hasMany(apiDataModel, { foreignKey: 'anomalyId' });
 
   // Sync database
-  // In production, skip sync if tables already exist (use migration scripts instead)
+  // In production, be careful with sync to avoid schema conflicts
   if (process.env.NODE_ENV === 'development') {
     await sequelize.sync({ alter: true });
   } else {
@@ -43,11 +43,13 @@ async function initializeDatabase(sequelize) {
         console.log('Tables not found, creating...');
         await sequelize.sync();
       } else {
-        console.log('Tables already exist, skipping sync');
+        console.log('Tables already exist, skipping sync to avoid conflicts');
+        // Just verify connection, don't alter schema
       }
     } catch (error) {
-      console.log('Could not check tables, attempting sync...');
-      await sequelize.sync();
+      console.log('Could not check tables, attempting safe sync...');
+      // Use sync without alter in production to avoid enum conflicts
+      await sequelize.sync({ force: false, alter: false });
     }
   }
 
