@@ -18,77 +18,65 @@ interface Alert {
 }
 
 const AlertsDeliveryPage: React.FC = () => {
-  const [alerts, setAlerts] = useState<Alert[]>([
-    {
-      id: 'alert-001',
-      title: 'Critical Seismic Anomaly Detected',
-      description: 'Unusual seismic activity pattern detected in Pacific Northwest. Swarm consensus: 91%. Immediate attention required.',
-      severity: 'Critical',
-      timestamp: '2 minutes ago',
-      anomalyId: 'anom-001',
-      swarmRecommendation: 'Deploy additional monitoring equipment. Coordinate with geological survey agencies. Prepare evacuation protocols.',
-      actions: ['Deploy Sensors', 'Alert Agencies', 'Prepare Response'],
-      status: 'new'
-    },
-    {
-      id: 'alert-002',
-      title: 'Atmospheric Anomaly - High Confidence',
-      description: 'Unexpected atmospheric pressure changes detected. Multi-modal verification confirms anomaly.',
-      severity: 'High',
-      timestamp: '15 minutes ago',
-      anomalyId: 'anom-002',
-      swarmRecommendation: 'Increase atmospheric monitoring. Alert aviation authorities. Monitor for weather pattern changes.',
-      actions: ['Increase Monitoring', 'Alert Aviation', 'Weather Analysis'],
-      status: 'acknowledged'
-    },
-    {
-      id: 'alert-003',
-      title: 'Unidentified Aerial Phenomena',
-      description: 'Multiple radar contacts with unusual flight characteristics. Visual confirmation pending.',
-      severity: 'High',
-      timestamp: '1 hour ago',
-      anomalyId: 'anom-003',
-      swarmRecommendation: 'Scramble intercept aircraft. Enhance radar coverage. Coordinate with air defense.',
-      actions: ['Intercept', 'Enhance Radar', 'Coordinate Defense'],
-      status: 'acknowledged'
-    },
-    {
-      id: 'alert-004',
-      title: 'EM Interference Resolved',
-      description: 'Electromagnetic interference spike in Tokyo Metropolitan area has been resolved.',
-      severity: 'Medium',
-      timestamp: '2 hours ago',
-      anomalyId: 'anom-004',
-      swarmRecommendation: 'Continue monitoring for recurrence. Document incident for pattern analysis.',
-      actions: ['Monitor', 'Document'],
-      status: 'resolved'
-    }
-  ]);
-
+  const [alerts, setAlerts] = useState<Alert[]>([]);
   const [filter, setFilter] = useState<string>('all');
-  const [newAlertCount, setNewAlertCount] = useState(1);
+  const [newAlertCount, setNewAlertCount] = useState(0);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Simulate real-time alerts
-    const interval = setInterval(() => {
-      if (Math.random() > 0.8) {
-        setNewAlertCount(prev => prev + 1);
-      }
-    }, 10000);
-
+    fetchAlerts();
+    
+    // Fetch alerts every 30 seconds
+    const interval = setInterval(fetchAlerts, 30000);
     return () => clearInterval(interval);
   }, []);
 
-  const handleAcknowledge = (alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId ? { ...alert, status: 'acknowledged' } : alert
-    ));
+  const fetchAlerts = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/alerts');
+      const data = await response.json();
+      
+      if (data.alerts) {
+        setAlerts(data.alerts);
+        setNewAlertCount(data.alerts.filter((a: Alert) => a.status === 'new').length);
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch alerts:', error);
+      setLoading(false);
+    }
   };
 
-  const handleResolve = (alertId: string) => {
-    setAlerts(prev => prev.map(alert => 
-      alert.id === alertId ? { ...alert, status: 'resolved' } : alert
-    ));
+  const handleAcknowledge = async (alertId: string) => {
+    try {
+      await fetch(`http://localhost:3001/api/alerts/${alertId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'acknowledged' })
+      });
+      
+      setAlerts(prev => prev.map(alert => 
+        alert.id === alertId ? { ...alert, status: 'acknowledged' } : alert
+      ));
+    } catch (error) {
+      console.error('Failed to acknowledge alert:', error);
+    }
+  };
+
+  const handleResolve = async (alertId: string) => {
+    try {
+      await fetch(`http://localhost:3001/api/alerts/${alertId}/status`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: 'resolved' })
+      });
+      
+      setAlerts(prev => prev.map(alert => 
+        alert.id === alertId ? { ...alert, status: 'resolved' } : alert
+      ));
+    } catch (error) {
+      console.error('Failed to resolve alert:', error);
+    }
   };
 
   const filteredAlerts = filter === 'all' 
@@ -330,7 +318,13 @@ const AlertsDeliveryPage: React.FC = () => {
         ))}
       </div>
 
-      {filteredAlerts.length === 0 && (
+      {loading && (
+        <Card className="text-center py-12">
+          <div className="text-gray-400">Loading alerts...</div>
+        </Card>
+      )}
+
+      {!loading && filteredAlerts.length === 0 && (
         <Card className="text-center py-12">
           <CheckCircle className="w-16 h-16 text-green-400 mx-auto mb-4" />
           <h3 className="text-xl font-semibold text-white mb-2">No Alerts</h3>

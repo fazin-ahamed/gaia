@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import PageHeader from '../components/PageHeader';
 import Card from '../components/Card';
@@ -12,20 +12,56 @@ import { Clock, MapPin, Network, Brain, Download, Share2, AlertTriangle } from '
 const IncidentDetailsEnhanced: React.FC = () => {
   const { id } = useParams();
 
-  const [incident] = useState({
-    id: id || 'anom-001',
-    title: 'Unusual Seismic Activity Pattern',
-    description: 'Multiple low-frequency tremors detected in historically non-seismic zone. Pattern analysis suggests non-natural origin. Cross-modal verification confirms anomalous characteristics.',
-    severity: 'Critical',
-    confidence: 0.94,
-    swarmConsensus: 0.91,
-    credibilityScore: 0.96,
-    location: 'Pacific Northwest, USA',
-    coordinates: { lat: 47.6062, lng: -122.3321 },
-    timestamp: '2024-11-18T14:32:00Z',
-    status: 'Active Investigation',
-    modalities: ['Seismic Sensors', 'Satellite Imagery', 'Audio Analysis', 'EM Sensors']
-  });
+  const [incident, setIncident] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchIncidentDetails();
+  }, [id]);
+
+  const fetchIncidentDetails = async () => {
+    try {
+      const response = await fetch(`http://localhost:3001/api/anomalies/${id}`);
+      const data = await response.json();
+      
+      if (data) {
+        setIncident({
+          id: data.id,
+          title: data.title,
+          description: data.description,
+          severity: data.severity,
+          confidence: data.confidence,
+          swarmConsensus: data.aiAnalysis?.consensus || 0.85,
+          credibilityScore: data.aiAnalysis?.credibility || 0.90,
+          location: data.location || 'Unknown',
+          coordinates: data.location || { lat: 0, lng: 0 },
+          timestamp: data.timestamp,
+          status: data.status,
+          modalities: data.modalities || []
+        });
+      }
+      setLoading(false);
+    } catch (error) {
+      console.error('Failed to fetch incident details:', error);
+      setLoading(false);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gaia-dark p-6">
+        <div className="text-center text-gray-400 py-12">Loading incident details...</div>
+      </div>
+    );
+  }
+
+  if (!incident) {
+    return (
+      <div className="min-h-screen bg-gaia-dark p-6">
+        <div className="text-center text-gray-400 py-12">Incident not found</div>
+      </div>
+    );
+  }
 
   const [timeline] = useState([
     {

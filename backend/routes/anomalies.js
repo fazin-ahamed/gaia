@@ -2,7 +2,6 @@ const express = require('express');
 const { Op } = require('sequelize');
 const winston = require('winston');
 const { analyzeAnomalyData, generateReport } = require('../services/geminiAI');
-const { models } = require('../models');
 
 const router = express.Router();
 
@@ -72,20 +71,20 @@ router.get('/', async (req, res) => {
       };
     }
 
-    const { count, rows } = await models.Anomaly.findAndCountAll({
+    const { count, rows } = await global.models.Anomaly.findAndCountAll({
       where: whereClause,
       limit: parseInt(limit),
       offset: parseInt(offset),
       order: [['timestamp', 'DESC']],
       include: [
         {
-          model: models.ApiData,
+          model: global.models.ApiData,
           as: 'apiData',
           limit: 5,
           order: [['timestamp', 'DESC']]
         },
         {
-          model: models.AuditLog,
+          model: global.models.AuditLog,
           as: 'auditLogs',
           limit: 10,
           order: [['timestamp', 'DESC']]
@@ -112,19 +111,19 @@ router.get('/', async (req, res) => {
 // Get specific anomaly by ID
 router.get('/:id', async (req, res) => {
   try {
-    const anomaly = await models.Anomaly.findByPk(req.params.id, {
+    const anomaly = await global.models.Anomaly.findByPk(req.params.id, {
       include: [
         {
-          model: models.ApiData,
+          model: global.models.ApiData,
           as: 'apiData'
         },
         {
-          model: models.AuditLog,
+          model: global.models.AuditLog,
           as: 'auditLogs',
           order: [['timestamp', 'DESC']]
         },
         {
-          model: models.Workflow,
+          model: global.models.Workflow,
           as: 'workflow'
         }
       ]
@@ -166,7 +165,7 @@ router.post('/', async (req, res) => {
       });
     }
 
-    const anomaly = await models.Anomaly.create({
+    const anomaly = await global.models.Anomaly.create({
       title,
       description: description || aiAnalysis?.description,
       severity: severity || aiAnalysis?.severity || 'medium',
@@ -181,7 +180,7 @@ router.post('/', async (req, res) => {
     });
 
     // Create audit log
-    await models.AuditLog.create({
+    await global.models.AuditLog.create({
       anomalyId: anomaly.id,
       action: 'created',
       actor: 'human',
@@ -202,7 +201,7 @@ router.post('/', async (req, res) => {
 // Update anomaly
 router.put('/:id', async (req, res) => {
   try {
-    const anomaly = await models.Anomaly.findByPk(req.params.id);
+    const anomaly = await global.models.Anomaly.findByPk(req.params.id);
     if (!anomaly) {
       return res.status(404).json({ error: 'Anomaly not found' });
     }
@@ -217,7 +216,7 @@ router.put('/:id', async (req, res) => {
     });
 
     // Create audit log
-    await models.AuditLog.create({
+    await global.models.AuditLog.create({
       anomalyId: anomaly.id,
       action: 'updated',
       actor: 'human',
@@ -238,7 +237,7 @@ router.put('/:id', async (req, res) => {
 // Approve anomaly
 router.post('/:id/approve', async (req, res) => {
   try {
-    const anomaly = await models.Anomaly.findByPk(req.params.id);
+    const anomaly = await global.models.Anomaly.findByPk(req.params.id);
     if (!anomaly) {
       return res.status(404).json({ error: 'Anomaly not found' });
     }
@@ -252,7 +251,7 @@ router.post('/:id/approve', async (req, res) => {
     });
 
     // Create audit log
-    await models.AuditLog.create({
+    await global.models.AuditLog.create({
       anomalyId: anomaly.id,
       action: 'approved',
       actor: 'human',
@@ -278,7 +277,7 @@ router.post('/:id/approve', async (req, res) => {
 // Reject anomaly
 router.post('/:id/reject', async (req, res) => {
   try {
-    const anomaly = await models.Anomaly.findByPk(req.params.id);
+    const anomaly = await global.models.Anomaly.findByPk(req.params.id);
     if (!anomaly) {
       return res.status(404).json({ error: 'Anomaly not found' });
     }
@@ -291,7 +290,7 @@ router.post('/:id/reject', async (req, res) => {
       lastUpdated: new Date()
     });
 
-    await models.AuditLog.create({
+    await global.models.AuditLog.create({
       anomalyId: anomaly.id,
       action: 'rejected',
       actor: 'human',
@@ -312,7 +311,7 @@ router.post('/:id/reject', async (req, res) => {
 // Escalate anomaly
 router.post('/:id/escalate', async (req, res) => {
   try {
-    const anomaly = await models.Anomaly.findByPk(req.params.id);
+    const anomaly = await global.models.Anomaly.findByPk(req.params.id);
     if (!anomaly) {
       return res.status(404).json({ error: 'Anomaly not found' });
     }
@@ -326,7 +325,7 @@ router.post('/:id/escalate', async (req, res) => {
       lastUpdated: new Date()
     });
 
-    await models.AuditLog.create({
+    await global.models.AuditLog.create({
       anomalyId: anomaly.id,
       action: 'escalated',
       actor: 'human',
@@ -348,10 +347,10 @@ router.post('/:id/escalate', async (req, res) => {
 router.get('/:id/report/:format', async (req, res) => {
   try {
     const { format } = req.params;
-    const anomaly = await models.Anomaly.findByPk(req.params.id, {
+    const anomaly = await global.models.Anomaly.findByPk(req.params.id, {
       include: [
-        { model: models.ApiData, as: 'apiData' },
-        { model: models.AuditLog, as: 'auditLogs' }
+        { model: global.models.ApiData, as: 'apiData' },
+        { model: global.models.AuditLog, as: 'auditLogs' }
       ]
     });
 
@@ -380,24 +379,24 @@ router.get('/:id/report/:format', async (req, res) => {
 // Get anomaly statistics
 router.get('/stats/overview', async (req, res) => {
   try {
-    const totalAnomalies = await models.Anomaly.count();
-    const statusCounts = await models.Anomaly.findAll({
+    const totalAnomalies = await global.models.Anomaly.count();
+    const statusCounts = await global.models.Anomaly.findAll({
       attributes: [
         'status',
-        [models.sequelize.fn('COUNT', models.sequelize.col('status')), 'count']
+        [global.models.sequelize.fn('COUNT', global.models.sequelize.col('status')), 'count']
       ],
       group: ['status']
     });
 
-    const severityCounts = await models.Anomaly.findAll({
+    const severityCounts = await global.models.Anomaly.findAll({
       attributes: [
         'severity',
-        [models.sequelize.fn('COUNT', models.sequelize.col('severity')), 'count']
+        [global.models.sequelize.fn('COUNT', global.models.sequelize.col('severity')), 'count']
       ],
       group: ['severity']
     });
 
-    const recentAnomalies = await models.Anomaly.count({
+    const recentAnomalies = await global.models.Anomaly.count({
       where: {
         timestamp: {
           [Op.gte]: new Date(Date.now() - 24 * 60 * 60 * 1000) // Last 24 hours

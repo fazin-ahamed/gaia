@@ -11,60 +11,11 @@ const logger = winston.createLogger({
   ]
 });
 
-// Analyze image for anomalies using Gemini Vision
+// Analyze image for anomalies using AI Service
 async function analyzeImage(imageBuffer, filename) {
   try {
-    // Use Gemini for image analysis if available
-    if (process.env.GEMINI_API_KEY) {
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro-vision' });
-
-      const imageParts = [{
-        inlineData: {
-          data: imageBuffer.toString('base64'),
-          mimeType: 'image/jpeg'
-        }
-      }];
-
-      const prompt = "Analyze this image for any anomalies, unusual patterns, disasters, emergencies, or dangerous situations. Describe what you see and rate the severity from 0-10.";
-      
-      const result = await model.generateContent([prompt, ...imageParts]);
-      const response = await result.response;
-      const text = response.text();
-
-      // Parse Gemini response for anomaly detection
-      const anomalyScore = parseGeminiImageResponse(text, filename);
-      
-      return {
-        type: 'image',
-        filename,
-        geminiAnalysis: text,
-        anomalyScore,
-        confidence: anomalyScore.confidence,
-        isAnomaly: anomalyScore.isAnomaly,
-        reasoning: anomalyScore.reasoning,
-        timestamp: new Date().toISOString()
-      };
-    }
-
-    // Fallback to basic image analysis
-    const anomalyScore = {
-      confidence: 0.5,
-      isAnomaly: false,
-      reasoning: 'Image uploaded - manual review recommended',
-      severity: 'Medium'
-    };
-    
-    return {
-      type: 'image',
-      filename,
-      anomalyScore,
-      confidence: anomalyScore.confidence,
-      isAnomaly: anomalyScore.isAnomaly,
-      reasoning: anomalyScore.reasoning,
-      timestamp: new Date().toISOString()
-    };
+    const { analyzeImage: aiAnalyzeImage } = require('./aiService');
+    return await aiAnalyzeImage(imageBuffer, filename);
   } catch (error) {
     logger.error('Image analysis error:', error.message);
     return {
@@ -124,55 +75,11 @@ function parseGeminiImageResponse(text, filename) {
   };
 }
 
-// Analyze text for anomalies using Gemini
+// Analyze text for anomalies using AI Service
 async function analyzeText(text) {
   try {
-    // Use Gemini for text analysis
-    if (process.env.GEMINI_API_KEY) {
-      const { GoogleGenerativeAI } = require('@google/generative-ai');
-      const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-      const model = genAI.getGenerativeModel({ model: 'gemini-pro' });
-
-      const prompt = `Analyze this text for anomalies, threats, emergencies, or unusual patterns. 
-Text: "${text}"
-
-Provide:
-1. Is this content normal or anomalous? (normal/anomalous)
-2. Confidence level (0-100%)
-3. Severity (Low/Medium/High/Critical)
-4. Is this fake or fabricated content? (yes/no)
-5. Brief reasoning
-
-Format: [Classification]|[Confidence]|[Severity]|[IsFake]|[Reasoning]`;
-
-      const result = await model.generateContent(prompt);
-      const response = await result.response;
-      const analysisText = response.text();
-
-      const anomalyScore = parseGeminiTextResponse(analysisText, text);
-      
-      return {
-        type: 'text',
-        geminiAnalysis: analysisText,
-        anomalyScore,
-        confidence: anomalyScore.confidence,
-        isAnomaly: anomalyScore.isAnomaly,
-        reasoning: anomalyScore.reasoning,
-        timestamp: new Date().toISOString()
-      };
-    }
-
-    // Fallback to keyword-based analysis
-    const anomalyScore = calculateTextAnomalyScore(null, null, text);
-    
-    return {
-      type: 'text',
-      anomalyScore,
-      confidence: anomalyScore.confidence,
-      isAnomaly: anomalyScore.isAnomaly,
-      reasoning: anomalyScore.reasoning,
-      timestamp: new Date().toISOString()
-    };
+    const { analyzeText: aiAnalyzeText } = require('./aiService');
+    return await aiAnalyzeText(text);
   } catch (error) {
     logger.error('Text analysis error:', error.message);
     

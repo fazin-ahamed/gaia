@@ -18,6 +18,8 @@ const realtimeRoutes = require('./routes/realtime');
 const uploadRoutes = require('./routes/upload');
 const opusRoutes = require('./routes/opus');
 const statsRoutes = require('./routes/stats');
+const alertsRoutes = require('./routes/alerts');
+const aiStatusRoutes = require('./routes/ai-status');
 const { initializeDatabase } = require('./models');
 const { startDataIngestion } = require('./services/dataIngestion');
 const { initializeGeminiAI } = require('./services/geminiAI');
@@ -59,6 +61,20 @@ const dbConfig = {
 
 if (dbConfig.dialect === 'sqlite') {
   dbConfig.storage = process.env.DB_STORAGE || './gaia.db';
+} else if (process.env.DATABASE_URL) {
+  // Render/Railway/Heroku style DATABASE_URL
+  dbConfig.dialectOptions = {
+    ssl: {
+      require: true,
+      rejectUnauthorized: false
+    }
+  };
+  dbConfig.pool = {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  };
 } else {
   dbConfig.host = process.env.DB_HOST || 'localhost';
   dbConfig.port = process.env.DB_PORT || 5432;
@@ -66,7 +82,10 @@ if (dbConfig.dialect === 'sqlite') {
   dbConfig.username = process.env.DB_USER || 'postgres';
   dbConfig.password = process.env.DB_PASSWORD || '';
 }
-const sequelize = new Sequelize(dbConfig);
+
+const sequelize = process.env.DATABASE_URL 
+  ? new Sequelize(process.env.DATABASE_URL, dbConfig)
+  : new Sequelize(dbConfig);
 
 // Initialize database and services
 async function initializeApp() {
@@ -90,10 +109,11 @@ async function initializeApp() {
 
     // Start data ingestion scheduler
     if (process.env.AUTONOMOUS_MODE === 'true') {
-      cron.schedule('*/5 * * * *', () => {
+      // Reduced frequency to avoid rate limits: every 15 minutes instead of 5
+      cron.schedule('*/15 * * * *', () => {
         startDataIngestion();
       });
-      logger.info('Autonomous data ingestion scheduled (every 5 minutes)');
+      logger.info('Autonomous data ingestion scheduled (every 15 minutes)');
     }
 
     logger.info('GAIA Backend initialized successfully');
@@ -111,6 +131,8 @@ app.use('/api/realtime', realtimeRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/opus', opusRoutes);
 app.use('/api/stats', statsRoutes);
+app.use('/api/alerts', alertsRoutes);
+app.use('/api/ai', aiStatusRoutes);
 
 // Health check
 app.get('/health', (req, res) => {
