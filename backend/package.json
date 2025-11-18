@@ -9,6 +9,7 @@
     "test": "jest",
     "migrate": "node migrate-and-seed.js",
     "migrate:prod": "node setup-database.js",
+    "migrate:simple": "node simple-migrate.js",
     "seed": "node seed-data.js"
   },
   "dependencies": {
