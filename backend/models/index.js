@@ -18,14 +18,14 @@ async function initializeDatabase(sequelize) {
   const apiDataModel = ApiData(sequelize, DataTypes);
 
   // Define associations
-  anomalyModel.hasMany(auditLogModel, { foreignKey: 'anomalyId' });
-  auditLogModel.belongsTo(anomalyModel, { foreignKey: 'anomalyId' });
+  anomalyModel.hasMany(auditLogModel, { foreignKey: 'anomalyId', as: 'AuditLogs' });
+  auditLogModel.belongsTo(anomalyModel, { foreignKey: 'anomalyId', as: 'Anomaly' });
 
-  anomalyModel.belongsTo(workflowModel, { foreignKey: 'workflowId' });
-  workflowModel.hasMany(anomalyModel, { foreignKey: 'workflowId' });
+  anomalyModel.belongsTo(workflowModel, { foreignKey: 'workflowId', as: 'Workflow' });
+  workflowModel.hasMany(anomalyModel, { foreignKey: 'workflowId', as: 'Anomalies' });
 
-  apiDataModel.belongsTo(anomalyModel, { foreignKey: 'anomalyId' });
-  anomalyModel.hasMany(apiDataModel, { foreignKey: 'anomalyId' });
+  apiDataModel.belongsTo(anomalyModel, { foreignKey: 'anomalyId', as: 'Anomaly' });
+  anomalyModel.hasMany(apiDataModel, { foreignKey: 'anomalyId', as: 'ApiData' });
 
   // Sync database
   // In production, skip sync entirely to avoid conflicts

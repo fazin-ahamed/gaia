@@ -79,13 +79,13 @@ router.get('/', async (req, res) => {
       include: [
         {
           model: global.models.ApiData,
-          as: 'apiData',
+          as: 'ApiData',
           limit: 5,
           order: [['timestamp', 'DESC']]
         },
         {
           model: global.models.AuditLog,
-          as: 'auditLogs',
+          as: 'AuditLogs',
           limit: 10,
           order: [['timestamp', 'DESC']]
         }
@@ -111,7 +111,7 @@ router.get('/', async (req, res) => {
         currentPage: 1,
         totalPages: 0,
         totalItems: 0,
-        itemsPerPage: parseInt(limit)
+        itemsPerPage: 20
       },
       error: error.message
     });
@@ -136,16 +136,16 @@ router.get('/:id', async (req, res) => {
       include: [
         {
           model: global.models.ApiData,
-          as: 'apiData'
+          as: 'ApiData'
         },
         {
           model: global.models.AuditLog,
-          as: 'auditLogs',
+          as: 'AuditLogs',
           order: [['timestamp', 'DESC']]
         },
         {
           model: global.models.Workflow,
-          as: 'workflow'
+          as: 'Workflow'
         }
       ]
     });
@@ -370,8 +370,8 @@ router.get('/:id/report/:format', async (req, res) => {
     const { format } = req.params;
     const anomaly = await global.models.Anomaly.findByPk(req.params.id, {
       include: [
-        { model: global.models.ApiData, as: 'apiData' },
-        { model: global.models.AuditLog, as: 'auditLogs' }
+        { model: global.models.ApiData, as: 'ApiData' },
+        { model: global.models.AuditLog, as: 'AuditLogs' }
       ]
     });
 

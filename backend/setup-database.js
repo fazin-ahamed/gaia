@@ -57,12 +57,12 @@ async function setup() {
     const Workflow = WorkflowModel(sequelize, DataTypes);
 
     // Define associations
-    Anomaly.hasMany(AuditLog, { as: 'auditLogs', foreignKey: 'anomalyId' });
+    Anomaly.hasMany(AuditLog, { as: 'AuditLogs', foreignKey: 'anomalyId' });
     AuditLog.belongsTo(Anomaly, { foreignKey: 'anomalyId' });
-    Anomaly.belongsTo(Workflow, { as: 'workflow', foreignKey: 'workflowId' });
+    Anomaly.belongsTo(Workflow, { as: 'Workflow', foreignKey: 'workflowId' });
     Workflow.hasMany(Anomaly, { foreignKey: 'workflowId' });
     ApiData.belongsTo(Anomaly, { foreignKey: 'anomalyId' });
-    Anomaly.hasMany(ApiData, { as: 'apiData', foreignKey: 'anomalyId' });
+    Anomaly.hasMany(ApiData, { as: 'ApiData', foreignKey: 'anomalyId' });
 
     console.log('🔄 Creating tables...');
     await sequelize.sync({ alter: true });
