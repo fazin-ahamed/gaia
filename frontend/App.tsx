@@ -14,6 +14,7 @@ import OpusWorkflowPage from './pages/OpusWorkflowPage';
 import HumanReviewPage from './pages/HumanReviewPage';
 import IncidentDetailsPage from './pages/IncidentDetailsPage';
 import IncidentDetailsEnhanced from './pages/IncidentDetailsEnhanced';
+import IncidentsListPage from './pages/IncidentsListPage';
 import VerificationPage from './pages/VerificationPage';
 import OperationsConsole from './pages/OperationsConsole';
 import AlertsDeliveryPage from './pages/AlertsDeliveryPage';
@@ -21,6 +22,7 @@ import GlobalAnalyticsPage from './pages/GlobalAnalyticsPage';
 import GlobalAnalyticsEnhanced from './pages/GlobalAnalyticsEnhanced';
 import SettingsPage from './pages/SettingsPage';
 import AuditViewerPage from './pages/AuditViewerPage';
+import AuditLogsPage from './pages/AuditLogsPage';
 import AboutPage from './pages/AboutPage';
 import OnboardingPage from './pages/OnboardingPage';
 import NotFoundPage from './pages/NotFoundPage';
@@ -43,14 +45,17 @@ const AppContent: React.FC = () => {
                     <Route path="/detection/:id" element={<AIDetectionPage />} />
                     <Route path="/workflow/:id" element={<OpusWorkflowPage />} />
                     <Route path="/review/:id" element={<HumanReviewPage />} />
+                    <Route path="/incidents" element={<IncidentsListPage />} />
                     <Route path="/incident/:id" element={<IncidentDetailsEnhanced />} />
                     <Route path="/incident-old/:id" element={<IncidentDetailsPage />} />
+                    <Route path="/verification" element={<VerificationPage />} />
                     <Route path="/verification/:id" element={<VerificationPage />} />
                     <Route path="/operations" element={<OperationsConsole />} />
                     <Route path="/alerts" element={<AlertsDeliveryPage />} />
                     <Route path="/analytics" element={<GlobalAnalyticsEnhanced />} />
                     <Route path="/analytics-old" element={<GlobalAnalyticsPage />} />
                     <Route path="/settings" element={<SettingsPage />} />
+                    <Route path="/audit-logs" element={<AuditLogsPage />} />
                     <Route path="/audit/:id" element={<AuditViewerPage />} />
                     <Route path="/about" element={<AboutPage />} />
                     <Route path="/onboarding" element={<OnboardingPage />} />
