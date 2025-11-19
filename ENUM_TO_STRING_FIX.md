@@ -113,8 +113,45 @@ This fix allows:
 3. ✅ Render deployment
 4. ✅ Aiven PostgreSQL compatibility
 
+## Additional Fix: GIN Index on TEXT
+
+### Problem
+GIN indexes require JSONB type, not TEXT:
+```
+error: Unknown constraint error - You must specify an operator class for the index
+```
+
+### Solution
+Changed `tags` field in ApiData from TEXT to JSONB:
+
+**Before:**
+```javascript
+tags: {
+  type: DataTypes.TEXT,
+  allowNull: true,
+  defaultValue: JSON.stringify([]),
+  get() {
+    const rawValue = this.getDataValue('tags');
+    return rawValue ? JSON.parse(rawValue) : [];
+  },
+  set(val) {
+    this.setDataValue('tags', JSON.stringify(val));
+  },
+}
+```
+
+**After:**
+```javascript
+tags: {
+  type: DataTypes.JSONB,
+  allowNull: true,
+  defaultValue: [],
+}
+```
+
 ## Status
 
 ✅ **ALL ENUM ISSUES FIXED**
+✅ **GIN INDEX ISSUES FIXED**
 
-The application should now deploy successfully without enum casting errors.
+The application should now deploy successfully without enum casting or index errors.
