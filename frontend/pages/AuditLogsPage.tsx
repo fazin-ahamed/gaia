@@ -29,7 +29,16 @@ const AuditLogsPage: React.FC = () => {
   const fetchAuditLogs = async () => {
     try {
       // Fetch all anomalies and their audit logs
-      const response = await fetch('/api/anomalies?limit=100');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/anomalies?limit=100`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch audit logs:', response.status);
+        setLogs([]);
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
       
       const allLogs: AuditLog[] = [];

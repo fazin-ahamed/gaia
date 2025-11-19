@@ -104,7 +104,17 @@ router.get('/', async (req, res) => {
 
   } catch (error) {
     logger.error('Error fetching anomalies:', error);
-    res.status(500).json({ error: 'Failed to fetch anomalies' });
+    // Return empty result instead of error for better UX
+    res.json({
+      anomalies: [],
+      pagination: {
+        currentPage: 1,
+        totalPages: 0,
+        totalItems: 0,
+        itemsPerPage: parseInt(limit)
+      },
+      error: error.message
+    });
   }
 });
 

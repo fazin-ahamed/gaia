@@ -211,12 +211,14 @@ router.get('/hotspots', async (req, res) => {
   }
 });
 
-// Sync GDACS disasters to database
+// Sync GDACS disasters to database with Opus cross-verification
 router.post('/sync-disasters', async (req, res) => {
   try {
+    const { triggerOpusWorkflow } = require('../services/opusIntegration');
     const gdacsData = await fetchGDACSEvents();
     const savedAnomalies = [];
     const errors = [];
+    const verified = [];
 
     for (const feature of gdacsData.features) {
       try {
@@ -264,7 +266,8 @@ router.post('/sync-disasters', async (req, res) => {
             alertLevel: props.alertLevel,
             alertScore: props.alertScore,
             severity: props.severity,
-            affectedCountries: props.affectedCountries
+            affectedCountries: props.affectedCountries,
+            url: props.url
           },
           timestamp: new Date(props.fromDate || Date.now()),
           lastUpdated: new Date(props.dateModified || Date.now()),
@@ -282,6 +285,39 @@ router.post('/sync-disasters', async (req, res) => {
           title: anomaly.title,
           eventId: props.eventId
         });
+
+        // Trigger Opus workflow for cross-verification (only for high severity)
+        if (severity === 'critical' || severity === 'high') {
+          try {
+            const opusResult = await triggerOpusWorkflow({
+              id: anomaly.id,
+              title: anomaly.title,
+              description: anomaly.description,
+              severity: anomaly.severity,
+              confidence: anomaly.confidence,
+              location: anomaly.location,
+              timestamp: anomaly.timestamp.toISOString(),
+              modalities: ['disaster', props.eventType],
+              aiAnalysis: anomaly.aiAnalysis,
+              metadata: {
+                source: 'GDACS',
+                eventId: props.eventId,
+                alertLevel: props.alertLevel,
+                crossVerificationRequested: true
+              }
+            });
+
+            if (opusResult && opusResult.success) {
+              verified.push({
+                anomalyId: anomaly.id,
+                jobExecutionId: opusResult.jobExecutionId
+              });
+            }
+          } catch (opusError) {
+            console.error('Opus verification failed:', opusError.message);
+            // Continue even if Opus fails
+          }
+        }
       } catch (error) {
         errors.push({
           eventId: feature.properties.eventId,
@@ -293,9 +329,12 @@ router.post('/sync-disasters', async (req, res) => {
     res.json({
       success: true,
       synced: savedAnomalies.length,
+      verified: verified.length,
       errors: errors.length,
       savedAnomalies,
+      verifiedAnomalies: verified,
       errors: errors.length > 0 ? errors : undefined,
+      message: `Synced ${savedAnomalies.length} disasters, ${verified.length} sent to Opus for cross-verification`,
       timestamp: new Date().toISOString()
     });
   } catch (error) {

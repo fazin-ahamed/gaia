@@ -28,11 +28,21 @@ const IncidentsListPage: React.FC = () => {
 
   const fetchAnomalies = async () => {
     try {
-      const response = await fetch('/api/anomalies?limit=100');
+      const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
+      const response = await fetch(`${API_URL}/api/anomalies?limit=100`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch anomalies:', response.status);
+        setAnomalies([]);
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
       setAnomalies(data.anomalies || []);
     } catch (error) {
       console.error('Error fetching anomalies:', error);
+      setAnomalies([]);
     } finally {
       setLoading(false);
     }
