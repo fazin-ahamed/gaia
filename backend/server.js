@@ -64,6 +64,9 @@ if (dbConfig.dialect === 'sqlite') {
   dbConfig.storage = process.env.DB_STORAGE || './gaia.db';
 } else if (process.env.DATABASE_URL) {
   // Render/Railway/Heroku style DATABASE_URL
+  // Set NODE_TLS_REJECT_UNAUTHORIZED for SSL issues
+  process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
+  
   dbConfig.dialectOptions = {
     ssl: {
       require: true,
