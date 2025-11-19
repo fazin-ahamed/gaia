@@ -14,7 +14,7 @@ async function fixWorkflowIndex() {
             rejectUnauthorized: false
           }
         },
-        logging: console.log
+        logging: false
       })
     : new Sequelize({
         dialect: process.env.DB_DIALECT || 'postgres',
@@ -23,12 +23,23 @@ async function fixWorkflowIndex() {
         database: process.env.DB_NAME || 'gaia_db',
         username: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || '',
-        logging: console.log
+        logging: false
       });
 
   try {
     await sequelize.authenticate();
     console.log('✓ Database connected');
+
+    // Check if workflows table exists first
+    const [tables] = await sequelize.query(
+      "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'workflows';"
+    ).catch(() => [[]]);
+
+    if (!tables || tables.length === 0) {
+      console.log('✓ Workflows table does not exist, no fix needed');
+      await sequelize.close();
+      return;
+    }
 
     // Drop the problematic GIN index if it exists
     try {

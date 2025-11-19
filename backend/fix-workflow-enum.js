@@ -14,7 +14,7 @@ async function fixWorkflowEnum() {
             rejectUnauthorized: false
           }
         },
-        logging: console.log
+        logging: false
       })
     : new Sequelize({
         dialect: process.env.DB_DIALECT || 'postgres',
@@ -23,7 +23,7 @@ async function fixWorkflowEnum() {
         database: process.env.DB_NAME || 'gaia_db',
         username: process.env.DB_USER || 'postgres',
         password: process.env.DB_PASSWORD || '',
-        logging: console.log
+        logging: false
       });
 
   try {
@@ -33,9 +33,9 @@ async function fixWorkflowEnum() {
     // Check if workflows table exists
     const [tables] = await sequelize.query(
       "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'workflows';"
-    );
+    ).catch(() => [[]]);
 
-    if (tables.length === 0) {
+    if (!tables || tables.length === 0) {
       console.log('✓ Workflows table does not exist, no fix needed');
       await sequelize.close();
       return;
