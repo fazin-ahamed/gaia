@@ -101,10 +101,6 @@ module.exports = (sequelize, DataTypes) => {
         fields: ['location'],
         using: 'gin',
       },
-      {
-        fields: ['tags'],
-        using: 'gin',
-      },
     ],
   });
 

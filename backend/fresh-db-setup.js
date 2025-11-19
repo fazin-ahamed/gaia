@@ -140,9 +140,19 @@ async function setupFreshDatabase() {
       CREATE TABLE "api_data" (
         "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
         "anomalyId" UUID REFERENCES "anomalies"("id") ON DELETE CASCADE,
-        "source" VARCHAR(255) NOT NULL,
-        "data" JSONB NOT NULL,
+        "apiName" VARCHAR(255) NOT NULL,
+        "apiEndpoint" VARCHAR(255),
+        "rawData" JSONB NOT NULL,
+        "processedData" JSONB,
+        "dataType" VARCHAR(50) NOT NULL,
+        "location" JSONB,
         "timestamp" TIMESTAMP DEFAULT NOW(),
+        "dataTimestamp" TIMESTAMP,
+        "confidence" FLOAT CHECK (confidence >= 0 AND confidence <= 1),
+        "metadata" JSONB,
+        "status" VARCHAR(20) DEFAULT 'collected',
+        "errorMessage" TEXT,
+        "tags" JSONB DEFAULT '[]'::jsonb,
         "createdAt" TIMESTAMP DEFAULT NOW(),
         "updatedAt" TIMESTAMP DEFAULT NOW()
       );
@@ -184,6 +194,11 @@ async function setupFreshDatabase() {
     
     // API Data indexes
     await sequelize.query('CREATE INDEX "api_data_anomalyId" ON "api_data"("anomalyId");');
+    await sequelize.query('CREATE INDEX "api_data_apiName" ON "api_data"("apiName");');
+    await sequelize.query('CREATE INDEX "api_data_dataType" ON "api_data"("dataType");');
+    await sequelize.query('CREATE INDEX "api_data_timestamp" ON "api_data"("timestamp");');
+    await sequelize.query('CREATE INDEX "api_data_status" ON "api_data"("status");');
+    await sequelize.query('CREATE INDEX "api_data_location" ON "api_data" USING gin("location");');
     
     // Alerts indexes
     await sequelize.query('CREATE INDEX "alerts_anomalyId" ON "alerts"("anomalyId");');
