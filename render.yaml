@@ -5,7 +5,7 @@ services:
     env: node
     region: oregon
     plan: free
-    buildCommand: cd backend && npm install && node fix-workflow-enum.js || true
+    buildCommand: cd backend && npm install && node fix-workflow-enum.js || true && node fix-workflow-index.js || true
     startCommand: cd backend && node server.js
     healthCheckPath: /health
     envVars:
