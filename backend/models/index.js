@@ -28,28 +28,26 @@ async function initializeDatabase(sequelize) {
   anomalyModel.hasMany(apiDataModel, { foreignKey: 'anomalyId' });
 
   // Sync database
-  // In production, be careful with sync to avoid schema conflicts
+  // In production, skip sync entirely to avoid conflicts
+  // Use fresh-db-setup.js to create tables from scratch
   if (process.env.NODE_ENV === 'development') {
     await sequelize.sync({ alter: true });
   } else {
-    // Check if tables exist before syncing
+    // Production: Just verify tables exist, don't sync
     try {
       const [results] = await sequelize.query(
         "SELECT tablename FROM pg_tables WHERE schemaname = 'public' AND tablename = 'anomalies';"
       );
       
       if (results.length === 0) {
-        // Tables don't exist, create them
-        console.log('Tables not found, creating...');
-        await sequelize.sync();
+        console.log('⚠️  Tables not found! Run: node fresh-db-setup.js');
+        console.log('Attempting to create tables...');
+        await sequelize.sync({ force: false, alter: false });
       } else {
-        console.log('Tables already exist, skipping sync to avoid conflicts');
-        // Just verify connection, don't alter schema
+        console.log('✓ Tables exist, skipping sync');
       }
     } catch (error) {
-      console.log('Could not check tables, attempting safe sync...');
-      // Use sync without alter in production to avoid enum conflicts
-      await sequelize.sync({ force: false, alter: false });
+      console.log('Could not verify tables:', error.message);
     }
   }
 
