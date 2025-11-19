@@ -10,6 +10,8 @@ const {
   fetchNearbyEarthquakes,
   fetchNewsData,
   fetchNewsAPIData,
+  fetchGDACSEvents,
+  fetchGDACSEventDetails,
   fetchTomTomTraffic,
   fetchTomTomIncidents,
   fetchTomTomRoute,
@@ -17,6 +19,52 @@ const {
   fetchTomTomReverseGeocode,
   aggregateAnomalyData
 } = require('../services/externalAPIs');
+
+// Get GDACS disaster events
+router.get('/disasters', async (req, res) => {
+  try {
+    const events = await fetchGDACSEvents();
+    
+    res.json({
+      success: true,
+      ...events,
+      source: 'GDACS (Global Disaster Alert and Coordination System)'
+    });
+  } catch (error) {
+    console.error('GDACS fetch error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch disaster data' 
+    });
+  }
+});
+
+// Get specific GDACS event details
+router.get('/disasters/:eventType/:eventId', async (req, res) => {
+  try {
+    const { eventType, eventId } = req.params;
+    const eventDetails = await fetchGDACSEventDetails(eventType, eventId);
+    
+    if (eventDetails) {
+      res.json({
+        success: true,
+        event: eventDetails,
+        source: 'GDACS'
+      });
+    } else {
+      res.status(404).json({
+        success: false,
+        error: 'Event not found'
+      });
+    }
+  } catch (error) {
+    console.error('GDACS event details error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to fetch event details' 
+    });
+  }
+});
 
 // Get comprehensive weather data for a location
 router.get('/weather', async (req, res) => {

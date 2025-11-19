@@ -244,6 +244,76 @@ async function fetchGDELTEvents() {
   }
 }
 
+// GDACS (Global Disaster Alert and Coordination System)
+async function fetchGDACSEvents() {
+  try {
+    const response = await axios.get(`https://www.gdacs.org/gdacsapi/api/events/geteventlist/latest`, {
+      headers: {
+        'Accept': 'application/json'
+      },
+      timeout: 10000
+    });
+
+    if (response.data && response.data.features) {
+      return {
+        type: 'FeatureCollection',
+        features: response.data.features.map(feature => ({
+          type: 'Feature',
+          geometry: feature.geometry,
+          properties: {
+            eventId: feature.properties.eventid,
+            eventType: feature.properties.eventtype,
+            eventName: feature.properties.eventname,
+            name: feature.properties.name,
+            description: feature.properties.description,
+            alertLevel: feature.properties.alertlevel,
+            alertScore: feature.properties.alertscore,
+            severity: feature.properties.severitydata,
+            country: feature.properties.country,
+            affectedCountries: feature.properties.affectedcountries,
+            fromDate: feature.properties.fromdate,
+            toDate: feature.properties.todate,
+            dateModified: feature.properties.datemodified,
+            isCurrent: feature.properties.iscurrent,
+            url: feature.properties.url,
+            icon: feature.properties.icon
+          }
+        })),
+        timestamp: new Date().toISOString(),
+        count: response.data.features.length
+      };
+    }
+
+    return { type: 'FeatureCollection', features: [], count: 0 };
+  } catch (error) {
+    logger.error('GDACS fetch error:', error.message);
+    return { type: 'FeatureCollection', features: [], count: 0, error: error.message };
+  }
+}
+
+// Fetch specific GDACS event details
+async function fetchGDACSEventDetails(eventType, eventId) {
+  try {
+    const response = await axios.get(
+      `https://www.gdacs.org/gdacsapi/api/events/geteventdata`,
+      {
+        params: {
+          eventtype: eventType,
+          eventid: eventId
+        },
+        headers: {
+          'Accept': 'application/json'
+        }
+      }
+    );
+
+    return response.data;
+  } catch (error) {
+    logger.error('GDACS event details fetch error:', error.message);
+    return null;
+  }
+}
+
 // TomTom Traffic & Mapping APIs
 async function fetchTomTomTraffic(lat, lon, zoom = 12) {
   try {
@@ -668,6 +738,8 @@ module.exports = {
   fetchNewsData,
   fetchNewsAPIData,
   fetchGDELTEvents,
+  fetchGDACSEvents,
+  fetchGDACSEventDetails,
   fetchTomTomTraffic,
   fetchTomTomIncidents,
   fetchTomTomRoute,
