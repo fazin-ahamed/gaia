@@ -127,7 +127,9 @@ class APIService {
     try {
       const response = await fetch(`${this.baseURL}/api/realtime/hotspots`);
       if (!response.ok) throw new Error('Hotspots fetch failed');
-      return await response.json();
+      const data = await response.json();
+      // Handle new response format with hotspots array and summary
+      return data.hotspots || data || [];
     } catch (error) {
       console.error('Hotspots API error:', error);
       return [];
@@ -138,7 +140,9 @@ class APIService {
     try {
       const response = await fetch(`${this.baseURL}/api/anomalies`);
       if (!response.ok) throw new Error('Anomalies fetch failed');
-      return await response.json();
+      const data = await response.json();
+      // Handle response format with anomalies array and pagination
+      return data.anomalies || data || [];
     } catch (error) {
       console.error('Anomalies API error:', error);
       return [];
