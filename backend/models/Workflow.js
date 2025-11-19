@@ -18,9 +18,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: false,
     },
     status: {
-      type: DataTypes.ENUM('active', 'inactive', 'draft'),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'active',
+      validate: {
+        isIn: [['active', 'inactive', 'draft']]
+      }
     },
     triggerConditions: {
       type: DataTypes.JSONB, // Conditions that trigger this workflow

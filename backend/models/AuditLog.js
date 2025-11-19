@@ -14,24 +14,30 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     action: {
-      type: DataTypes.ENUM(
-        'created',
-        'updated',
-        'reviewed',
-        'approved',
-        'rejected',
-        'escalated',
-        'processed',
-        'workflow_started',
-        'workflow_completed',
-        'report_generated'
-      ),
+      type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        isIn: [[
+          'created',
+          'updated',
+          'reviewed',
+          'approved',
+          'rejected',
+          'escalated',
+          'processed',
+          'workflow_started',
+          'workflow_completed',
+          'report_generated'
+        ]]
+      }
     },
     actor: {
-      type: DataTypes.ENUM('system', 'human', 'ai'),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'system',
+      validate: {
+        isIn: [['system', 'human', 'ai']]
+      }
     },
     actorId: {
       type: DataTypes.STRING, // Could be user ID, AI model ID, etc.

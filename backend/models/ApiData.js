@@ -30,8 +30,11 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
     dataType: {
-      type: DataTypes.ENUM('weather', 'satellite', 'news', 'disaster', 'traffic', 'social', 'iot', 'environmental'),
+      type: DataTypes.STRING,
       allowNull: false,
+      validate: {
+        isIn: [['weather', 'satellite', 'news', 'disaster', 'traffic', 'social', 'iot', 'environmental']]
+      }
     },
     location: {
       type: DataTypes.JSONB, // { lat: number, lng: number, address: string, region: string }
@@ -59,9 +62,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
     status: {
-      type: DataTypes.ENUM('collected', 'processed', 'failed', 'expired'),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'collected',
+      validate: {
+        isIn: [['collected', 'processed', 'failed', 'expired']]
+      }
     },
     errorMessage: {
       type: DataTypes.TEXT,

@@ -14,9 +14,12 @@ module.exports = (sequelize, DataTypes) => {
       allowNull: true,
     },
     severity: {
-      type: DataTypes.ENUM('low', 'medium', 'high', 'critical'),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'medium',
+      validate: {
+        isIn: [['low', 'medium', 'high', 'critical']]
+      }
     },
     confidence: {
       type: DataTypes.FLOAT,
@@ -27,9 +30,12 @@ module.exports = (sequelize, DataTypes) => {
       },
     },
     status: {
-      type: DataTypes.ENUM('detected', 'processing', 'reviewed', 'approved', 'rejected', 'escalated'),
+      type: DataTypes.STRING,
       allowNull: false,
       defaultValue: 'detected',
+      validate: {
+        isIn: [['detected', 'processing', 'reviewed', 'approved', 'rejected', 'escalated']]
+      }
     },
     location: {
       type: DataTypes.JSONB, // { lat: number, lng: number, address: string }
