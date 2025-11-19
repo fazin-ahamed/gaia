@@ -43,7 +43,7 @@ router.post('/analyze', upload.single('file'), async (req, res) => {
     }
 
     const { buffer, mimetype, originalname } = req.file;
-    const { description, location } = req.body;
+    const { description, location, title } = req.body;
 
     let analysis;
 
@@ -63,28 +63,74 @@ router.post('/analyze', upload.single('file'), async (req, res) => {
     analysis.metadata = {
       description: description || '',
       location: location || 'Unknown',
-      uploadedAt: new Date().toISOString()
+      uploadedAt: new Date().toISOString(),
+      fileName: originalname
     };
 
-    // Trigger Opus workflow if anomaly detected
+    // Save to database if anomaly detected
+    let savedAnomaly = null;
     if (analysis.isAnomaly && !analysis.anomalyScore?.isFake) {
-      const opusResult = await triggerOpusWorkflow({
-        id: `upload-${Date.now()}`,
-        title: `Uploaded ${mimetype.split('/')[0]} anomaly`,
-        description: description || analysis.reasoning,
-        severity: analysis.anomalyScore?.severity || 'Medium',
-        confidence: analysis.confidence,
-        location: location || 'Unknown',
-        timestamp: new Date().toISOString(),
-        modalities: [mimetype.split('/')[0]],
-        aiAnalysis: analysis,
-        metadata: analysis.metadata
-      });
+      try {
+        // Parse location if provided as JSON string
+        let locationData = null;
+        if (location) {
+          try {
+            locationData = typeof location === 'string' ? JSON.parse(location) : location;
+          } catch (e) {
+            locationData = { address: location };
+          }
+        }
 
-      analysis.opusWorkflow = opusResult;
+        // Create anomaly in database
+        savedAnomaly = await global.models.Anomaly.create({
+          title: title || `Uploaded ${mimetype.split('/')[0]} anomaly`,
+          description: description || analysis.reasoning,
+          severity: analysis.anomalyScore?.severity?.toLowerCase() || 'medium',
+          confidence: analysis.confidence,
+          status: 'detected',
+          location: locationData,
+          modalities: {
+            type: mimetype.split('/')[0],
+            fileName: originalname,
+            fileType: mimetype
+          },
+          aiAnalysis: analysis,
+          timestamp: new Date(),
+          lastUpdated: new Date(),
+          tags: ['uploaded', mimetype.split('/')[0], 'user-reported']
+        });
+
+        // Trigger Opus workflow
+        const opusResult = await triggerOpusWorkflow({
+          id: savedAnomaly.id,
+          title: savedAnomaly.title,
+          description: savedAnomaly.description,
+          severity: savedAnomaly.severity,
+          confidence: savedAnomaly.confidence,
+          location: locationData,
+          timestamp: savedAnomaly.timestamp.toISOString(),
+          modalities: [mimetype.split('/')[0]],
+          aiAnalysis: analysis,
+          metadata: analysis.metadata
+        });
+
+        analysis.opusWorkflow = opusResult;
+        analysis.savedAnomaly = {
+          id: savedAnomaly.id,
+          title: savedAnomaly.title,
+          status: savedAnomaly.status
+        };
+      } catch (dbError) {
+        console.error('Database save error:', dbError);
+        analysis.dbError = 'Failed to save to database';
+      }
     }
 
-    res.json(analysis);
+    res.json({
+      ...analysis,
+      saved: !!savedAnomaly,
+      anomalyId: savedAnomaly?.id
+    });
   } catch (error) {
     console.error('Upload analysis error:', error);
     res.status(500).json({ error: error.message });
