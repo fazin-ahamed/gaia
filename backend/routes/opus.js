@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
 const {
+  getWorkflowDetails,
+  initiateJob,
+  generateFileUploadUrl,
+  uploadFile,
+  executeJob,
+  getJobStatus,
+  getJobResults,
+  getJobAudit,
   triggerOpusWorkflow,
-  getOpusWorkflowSchema,
-  checkOpusJobStatus,
   triggerOpusWorkflowWithFiles,
   batchTriggerOpusWorkflows,
   monitorOpusJob
@@ -67,11 +73,11 @@ router.post('/batch-trigger', async (req, res) => {
   }
 });
 
-// Get workflow schema
-router.get('/schema/:workflowId?', async (req, res) => {
+// Get workflow details and schema
+router.get('/workflow/:workflowId?', async (req, res) => {
   try {
     const { workflowId } = req.params;
-    const result = await getOpusWorkflowSchema(workflowId);
+    const result = await getWorkflowDetails(workflowId);
 
     if (result.success) {
       res.json(result);
@@ -83,16 +89,121 @@ router.get('/schema/:workflowId?', async (req, res) => {
   }
 });
 
-// Check job status
-router.get('/job/:jobId', async (req, res) => {
+// Initiate a new job
+router.post('/job/initiate', async (req, res) => {
   try {
-    const { jobId } = req.params;
+    const { workflowId, title, description } = req.body;
 
-    if (!jobId) {
-      return res.status(400).json({ error: 'Job ID required' });
+    if (!workflowId || !title || !description) {
+      return res.status(400).json({ error: 'workflowId, title, and description required' });
     }
 
-    const result = await checkOpusJobStatus(jobId);
+    const result = await initiateJob(workflowId, title, description);
+
+    if (result.success) {
+      res.status(201).json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Generate presigned file upload URL
+router.post('/job/file/upload', async (req, res) => {
+  try {
+    const { fileExtension, accessScope } = req.body;
+
+    if (!fileExtension) {
+      return res.status(400).json({ error: 'fileExtension required' });
+    }
+
+    const result = await generateFileUploadUrl(fileExtension, accessScope);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Execute job
+router.post('/job/execute', async (req, res) => {
+  try {
+    const { jobExecutionId, jobPayloadSchemaInstance } = req.body;
+
+    if (!jobExecutionId || !jobPayloadSchemaInstance) {
+      return res.status(400).json({ error: 'jobExecutionId and jobPayloadSchemaInstance required' });
+    }
+
+    const result = await executeJob(jobExecutionId, jobPayloadSchemaInstance);
+
+    if (result.success) {
+      res.status(201).json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get job status
+router.get('/job/:jobExecutionId/status', async (req, res) => {
+  try {
+    const { jobExecutionId } = req.params;
+
+    if (!jobExecutionId) {
+      return res.status(400).json({ error: 'Job execution ID required' });
+    }
+
+    const result = await getJobStatus(jobExecutionId);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get job results
+router.get('/job/:jobExecutionId/results', async (req, res) => {
+  try {
+    const { jobExecutionId } = req.params;
+
+    if (!jobExecutionId) {
+      return res.status(400).json({ error: 'Job execution ID required' });
+    }
+
+    const result = await getJobResults(jobExecutionId);
+
+    if (result.success) {
+      res.json(result);
+    } else {
+      res.status(500).json(result);
+    }
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get job audit log
+router.get('/job/:jobExecutionId/audit', async (req, res) => {
+  try {
+    const { jobExecutionId } = req.params;
+
+    if (!jobExecutionId) {
+      return res.status(400).json({ error: 'Job execution ID required' });
+    }
+
+    const result = await getJobAudit(jobExecutionId);
 
     if (result.success) {
       res.json(result);
@@ -105,12 +216,12 @@ router.get('/job/:jobId', async (req, res) => {
 });
 
 // Monitor job with SSE (Server-Sent Events)
-router.get('/job/:jobId/monitor', async (req, res) => {
+router.get('/job/:jobExecutionId/monitor', async (req, res) => {
   try {
-    const { jobId } = req.params;
+    const { jobExecutionId } = req.params;
 
-    if (!jobId) {
-      return res.status(400).json({ error: 'Job ID required' });
+    if (!jobExecutionId) {
+      return res.status(400).json({ error: 'Job execution ID required' });
     }
 
     // Set up SSE
@@ -119,7 +230,7 @@ router.get('/job/:jobId/monitor', async (req, res) => {
     res.setHeader('Connection', 'keep-alive');
 
     // Monitor job and send updates
-    await monitorOpusJob(jobId, (status) => {
+    await monitorOpusJob(jobExecutionId, (status) => {
       res.write(`data: ${JSON.stringify(status)}\n\n`);
     });
 
@@ -137,7 +248,7 @@ router.get('/status', (req, res) => {
     configured,
     serviceKey: process.env.OPUS_SERVICE_KEY ? '***' + process.env.OPUS_SERVICE_KEY.slice(-4) : null,
     workflowId: process.env.OPUS_WORKFLOW_ID || null,
-    apiBase: 'https://operator.opus.com/v1'
+    apiBase: 'https://operator.opus.com'
   });
 });
 

@@ -1,7 +1,10 @@
 # GAIA 3.1 - Opus Workflow Integration Guide
 
+> **🚀 NEW: Remote Workflow API Integration Complete!**
+> Full implementation of Opus remote workflow triggering API. See [OPUS_REMOTE_WORKFLOW_GUIDE.md](OPUS_REMOTE_WORKFLOW_GUIDE.md) for complete API documentation.
+
 ## Overview
-GAIA 3.1 integrates with Opus workflow orchestration platform to automate anomaly processing through sophisticated AI-powered workflows.
+GAIA 3.1 integrates with Opus workflow orchestration platform to automate anomaly processing through sophisticated AI-powered workflows. The integration now includes full support for remote workflow triggering via the official Opus API.
 
 ## How It Works
 
