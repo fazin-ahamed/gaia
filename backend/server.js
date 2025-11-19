@@ -24,6 +24,7 @@ const environmentalRoutes = require('./routes/environmental');
 const { initializeDatabase } = require('./models');
 const { startDataIngestion } = require('./services/dataIngestion');
 const { initializeGeminiAI } = require('./services/geminiAI');
+const { initializeAIService } = require('./services/aiService');
 const { initializeWorkflowEngine } = require('./services/workflowEngine');
 const { setupWebSocket } = require('./services/websocket');
 
@@ -102,8 +103,10 @@ async function initializeApp() {
     const models = await initializeDatabase(sequelize);
     global.models = models; // Make models globally accessible
 
-    // Initialize AI service
+    // Initialize AI services
     await initializeGeminiAI();
+    await initializeAIService();
+    logger.info('AI services initialized');
 
     // Initialize workflow engine
     await initializeWorkflowEngine();

@@ -23,9 +23,16 @@ const IncidentDetailsEnhanced: React.FC = () => {
     try {
       const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3001';
       const response = await fetch(`${API_URL}/api/anomalies/${id}`);
+      
+      if (!response.ok) {
+        console.error('Failed to fetch incident:', response.status);
+        setLoading(false);
+        return;
+      }
+      
       const data = await response.json();
       
-      if (data) {
+      if (data && !data.error) {
         setIncident({
           id: data.id,
           title: data.title,

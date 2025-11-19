@@ -61,23 +61,49 @@ const UserDashboardEnhanced: React.FC = () => {
   const fetchAnomalies = async () => {
     try {
       setLoading(true);
-      const hotspots = await apiService.fetchHotspots();
       
-      // Convert hotspots to anomalies
-      const convertedAnomalies: Anomaly[] = hotspots.map((hotspot, index) => ({
-        id: `anom-${index + 1}`,
-        title: `${hotspot.severity} Anomaly Detected in ${hotspot.name}`,
-        description: hotspot.analysis.agents.map(a => a.output).join('. ') || 'Multi-modal analysis in progress',
-        severity: hotspot.severity,
-        confidence: hotspot.analysis.consensus,
-        swarmConsensus: hotspot.analysis.consensus,
-        location: hotspot.name,
-        timestamp: new Date(hotspot.analysis.timestamp).toLocaleString(),
-        status: hotspot.severity === 'High' || hotspot.severity === 'Critical' ? 'Active' : 'Monitoring',
-        modalities: hotspot.analysis.agents.map(a => a.type)
-      }));
-
-      setAnomalies(convertedAnomalies);
+      // Fetch real anomalies from database
+      const realAnomalies = await apiService.fetchAnomalies();
+      
+      if (realAnomalies && realAnomalies.length > 0) {
+        // Use real anomalies from database
+        const convertedAnomalies: Anomaly[] = realAnomalies.map((anomaly: any) => ({
+          id: anomaly.id,
+          title: anomaly.title,
+          description: anomaly.description || 'No description available',
+          severity: anomaly.severity.charAt(0).toUpperCase() + anomaly.severity.slice(1),
+          confidence: anomaly.confidence,
+          swarmConsensus: anomaly.confidence,
+          location: anomaly.location?.address || anomaly.location?.lat ? 
+            `${anomaly.location.lat?.toFixed(2)}, ${anomaly.location.lng?.toFixed(2)}` : 
+            'Unknown',
+          timestamp: new Date(anomaly.timestamp).toLocaleString(),
+          status: anomaly.status === 'detected' ? 'Active' : 
+                  anomaly.status === 'processing' ? 'Processing' : 
+                  'Monitoring',
+          modalities: anomaly.modalities?.type ? [anomaly.modalities.type] : ['multi-modal']
+        }));
+        
+        setAnomalies(convertedAnomalies);
+      } else {
+        // Fallback to hotspots if no real anomalies
+        const hotspots = await apiService.fetchHotspots();
+        
+        const convertedAnomalies: Anomaly[] = hotspots.map((hotspot, index) => ({
+          id: `hotspot-${index}`,
+          title: `${hotspot.severity} Anomaly Detected in ${hotspot.name}`,
+          description: hotspot.analysis?.agents?.map((a: any) => a.output).join('. ') || 'Multi-modal analysis in progress',
+          severity: hotspot.severity,
+          confidence: hotspot.analysis?.consensus || 0.5,
+          swarmConsensus: hotspot.analysis?.consensus || 0.5,
+          location: hotspot.name,
+          timestamp: new Date(hotspot.analysis?.timestamp || Date.now()).toLocaleString(),
+          status: hotspot.severity === 'High' || hotspot.severity === 'Critical' ? 'Active' : 'Monitoring',
+          modalities: hotspot.analysis?.agents?.map((a: any) => a.type) || ['sensor']
+        }));
+        
+        setAnomalies(convertedAnomalies);
+      }
     } catch (error) {
       console.error('Failed to fetch anomalies:', error);
       // Fallback to demo data
